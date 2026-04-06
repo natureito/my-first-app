@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>中間地点アプリ</title>
+  <style>
+    body {
+      font-family: Arial;
+      padding: 20px;
+    }
+    input {
+      margin: 5px;
+      width: 120px;
+    }
+    button {
+      margin: 10px 5px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>中間地点計算アプリ（複数人対応）</h1>
+
+  <div id="inputs"></div>
+
+  <button onclick="addInput()">＋ 人を追加</button>
+  <button onclick="calc()">中間地点を計算</button>
+
+  <p id="result"></p>
+
+  <script>
+    function addInput() {
+      const div = document.createElement("div");
+
+      div.innerHTML = `
+        緯度: <input type="number" step="any" class="lat">
+        経度: <input type="number" step="any" class="lng">
+      `;
+
+      document.getElementById("inputs").appendChild(div);
+    }
+
+    function calc() {
+      const lats = document.querySelectorAll(".lat");
+      const lngs = document.querySelectorAll(".lng");
+
+      let sumLat = 0;
+      let sumLng = 0;
+      let count = lats.length;
+
+      if (count === 0) {
+        alert("人数を追加してください");
+        return;
+      }
+
+      for (let i = 0; i < count; i++) {
+        sumLat += Number(lats[i].value);
+        sumLng += Number(lngs[i].value);
+      }
+
+      const avgLat = sumLat / count;
+      const avgLng = sumLng / count;
+
+      document.getElementById("result").innerText =
+        `中間地点: 緯度 ${avgLat.toFixed(5)}, 経度 ${avgLng.toFixed(5)}`;
+    }
+
+    // 最初に3人分用意
+    for (let i = 0; i < 3; i++) {
+      addInput();
+    }
+  </script>
+
+</body>
+</html>
