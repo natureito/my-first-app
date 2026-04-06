@@ -3,72 +3,58 @@
 <head>
   <meta charset="UTF-8">
   <title>中間地点アプリ</title>
-  <style>
-    body {
-      font-family: Arial;
-      padding: 20px;
-    }
-    input {
-      margin: 5px;
-      width: 120px;
-    }
-    button {
-      margin: 10px 5px;
-    }
-  </style>
 </head>
 <body>
 
-  <h1>中間地点計算アプリ（複数人対応）</h1>
+<h1>駅の中間地点アプリ（複数人対応）</h1>
 
-  <div id="inputs"></div>
+<div id="inputs"></div>
 
-  <button onclick="addInput()">＋ 人を追加</button>
-  <button onclick="calc()">中間地点を計算</button>
+<button onclick="addInput()">＋ 人を追加</button>
+<button onclick="calc()">中間地点を計算</button>
 
-  <p id="result"></p>
+<p id="result"></p>
 
-  <script>
-    function addInput() {
-      const div = document.createElement("div");
+<script>
+function addInput() {
+  const div = document.createElement("div");
+  div.innerHTML = `駅名: <input type="text" class="station">`;
+  document.getElementById("inputs").appendChild(div);
+}
 
-div.innerHTML = `
-  駅名: <input type="text" class="station" placeholder="例：新宿">
-`;
+for (let i = 0; i < 3; i++) {
+  addInput();
+}
 
-      document.getElementById("inputs").appendChild(div);
-    }
+async function getLatLng(name) {
+  const apiKey = "ここにAPIキー";
+  const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${name}&key=${apiKey}`;
 
-    function calc() {
-      const lats = document.querySelectorAll(".lat");
-      const lngs = document.querySelectorAll(".lng");
+  const res = await fetch(url);
+  const data = await res.json();
 
-      let sumLat = 0;
-      let sumLng = 0;
-      let count = lats.length;
+  return data.results[0].geometry.location;
+}
 
-      if (count === 0) {
-        alert("人数を追加してください");
-        return;
-      }
+async function calc() {
+  const stations = document.querySelectorAll(".station");
 
-      for (let i = 0; i < count; i++) {
-        sumLat += Number(lats[i].value);
-        sumLng += Number(lngs[i].value);
-      }
+  let sumLat = 0;
+  let sumLng = 0;
 
-      const avgLat = sumLat / count;
-      const avgLng = sumLng / count;
+  for (let i = 0; i < stations.length; i++) {
+    const coords = await getLatLng(stations[i].value);
+    sumLat += coords.lat;
+    sumLng += coords.lng;
+  }
 
-      document.getElementById("result").innerText =
-        `中間地点: 緯度 ${avgLat.toFixed(5)}, 経度 ${avgLng.toFixed(5)}`;
-    }
+  const avgLat = sumLat / stations.length;
+  const avgLng = sumLng / stations.length;
 
-    // 最初に3人分用意
-    for (let i = 0; i < 3; i++) {
-      addInput();
-    }
-  </script>
+  document.getElementById("result").innerText =
+    `中間地点: ${avgLat}, ${avgLng}`;
+}
+</script>
 
 </body>
 </html>
