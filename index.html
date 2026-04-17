@@ -22,43 +22,4 @@ for (let i = 0; i < 3; i++) {
 async function getLatLng(name) {
   const apiKey = "AIzaSyAsTNH4ojZiwp3lUaGPt8z50eFK8VdeOKE";
   const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(name)}駅&key=${apiKey}`;
-  const res = await fetch(url);
-  const data = await res.json();
-  if (!data.results || data.results.length === 0) {
-    alert(name + " が見つかりません");
-    return { lat: 0, lng: 0 };
-  }
-  return data.results[0].geometry.location;
-}
-async function getNearestStation(lat, lng) {
-  const apiKey = "AIzaSyAsTNH4ojZiwp3lUaGPt8z50eFK8VdeOKE";
-  const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&language=ja&key=${apiKey}`;
-  const res = await fetch(url);
-  const data = await res.json();
-  if (!data.results) return "不明";
-  for (const result of data.results) {
-    if (result.types.includes("train_station") || result.types.includes("transit_station")) {
-      return result.name;
-    }
-  }
-  // 駅が見つからない場合は最初の結果の住所を返す
-  return data.results[0].formatted_address;
-}
-async function calc() {
-  const stations = document.querySelectorAll(".station");
-  let sumLat = 0;
-  let sumLng = 0;
-  for (let i = 0; i < stations.length; i++) {
-    const coords = await getLatLng(stations[i].value);
-    sumLat += coords.lat;
-    sumLng += coords.lng;
-  }
-  const avgLat = sumLat / stations.length;
-  const avgLng = sumLng / stations.length;
-  const nearestStation = await getNearestStation(avgLat, avgLng);
-  document.getElementById("result").innerText =
-    `中間地点の最寄り駅: ${nearestStation}`;
-}
-</script>
-</body>
-</html>
+  const res = await
