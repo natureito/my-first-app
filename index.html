@@ -5,62 +5,54 @@
   <title>中間地点アプリ</title>
 </head>
 <body>
-
 <h1>駅の中間地点アプリ（複数人対応）</h1>
-
 <div id="inputs"></div>
-
 <button onclick="addInput()">＋ 人を追加</button>
 <button onclick="calc()">中間地点を計算</button>
-
 <p id="result"></p>
-
 <script>
 function addInput() {
   const div = document.createElement("div");
   div.innerHTML = `駅名: <input type="text" class="station">`;
   document.getElementById("inputs").appendChild(div);
 }
-
 for (let i = 0; i < 3; i++) {
   addInput();
 }
-
 async function getLatLng(name) {
   const apiKey = "AIzaSyAsTNH4ojZiwp3lUaGPt8z50eFK8VdeOKE";
-
   const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(name)}駅&key=${apiKey}`;
-
   const res = await fetch(url);
   const data = await res.json();
-
   if (!data.results || data.results.length === 0) {
     alert(name + " が見つかりません");
     return { lat: 0, lng: 0 };
   }
-
   return data.results[0].geometry.location;
 }
-
+async function getNearestStation(lat, lng) {
+  const apiKey = "AIzaSyAsTNH4ojZiwp3lUaGPt8z50eFK8VdeOKE";
+  const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&rankby=distance&type=train_station&key=${apiKey}`;
+  const res = await fetch(url);
+  const data = await res.json();
+  if (!data.results || data.results.length === 0) return "不明";
+  return data.results[0].name;
+}
 async function calc() {
   const stations = document.querySelectorAll(".station");
-
   let sumLat = 0;
   let sumLng = 0;
-
   for (let i = 0; i < stations.length; i++) {
     const coords = await getLatLng(stations[i].value);
     sumLat += coords.lat;
     sumLng += coords.lng;
   }
-
   const avgLat = sumLat / stations.length;
   const avgLng = sumLng / stations.length;
-
+  const nearestStation = await getNearestStation(avgLat, avgLng);
   document.getElementById("result").innerText =
-    `中間地点: ${avgLat}, ${avgLng}`;
+    `中間地点の最寄り駅: ${nearestStation}`;
 }
 </script>
-
 </body>
 </html>
