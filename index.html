@@ -46,4 +46,19 @@ async function getNearestStation(lat, lng) {
 }
 async function calc() {
   const stations = document.querySelectorAll(".station");
-  let sum
+  let sumLat = 0;
+  let sumLng = 0;
+  for (let i = 0; i < stations.length; i++) {
+    const coords = await getLatLng(stations[i].value);
+    sumLat += coords.lat;
+    sumLng += coords.lng;
+  }
+  const avgLat = sumLat / stations.length;
+  const avgLng = sumLng / stations.length;
+  const nearestStation = await getNearestStation(avgLat, avgLng);
+  document.getElementById("result").innerText =
+    `中間地点の最寄り駅: ${nearestStation}`;
+}
+</script>
+</body>
+</html>
