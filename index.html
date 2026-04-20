@@ -32,11 +32,18 @@ async function getLatLng(name) {
 }
 async function getNearestStation(lat, lng) {
   const apiKey = "AIzaSyAsTNH4ojZiwp3lUaGPt8z50eFK8VdeOKE";
-  const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&language=ja&result_type=transit_station|train_station&key=${apiKey}`;
+  const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&language=ja&key=${apiKey}`;
   const res = await fetch(url);
   const data = await res.json();
-  if (!data.results || data.results.length === 0) return "不明";
-  return data.results[0].name || data.results[0].formatted_address;
+  if (!data.results) return "不明";
+  for (const result of data.results) {
+    const name = result.formatted_address || "";
+    if (name.includes("駅")) {
+      const match = name.match(/(\S+駅)/);
+      if (match) return match[1];
+    }
+  }
+  return data.results[0].formatted_address;
 }
 async function calc() {
   const stations = document.querySelectorAll(".station");
