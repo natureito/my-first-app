@@ -71,10 +71,12 @@ async function getNearestStations(lat, lng) {
 }
 
 async function getRestaurants(lat, lng, stationName) {
-  const url = `https://webservice.recruit.co.jp/hotpepper/gourmet/v1/?key=${hotpepperKey}&lat=${lat}&lng=${lng}&range=3&count=5&format=jsonp&callback=handleRestaurants`;
   document.getElementById("restaurants").innerHTML = `<p>${stationName}周辺のレストランを検索中...</p>`;
+  
+  const callbackName = "hotpepperCallback_" + Date.now();
+  const url = `https://webservice.recruit.co.jp/hotpepper/gourmet/v1/?key=${hotpepperKey}&lat=${lat}&lng=${lng}&range=3&count=5&format=jsonp&callback=${callbackName}`;
 
-  window.handleRestaurants = function(data) {
+  window[callbackName] = function(data) {
     const shops = data.results.shop;
     if (!shops || shops.length === 0) {
       document.getElementById("restaurants").innerHTML = `<p>レストランが見つかりませんでした。</p>`;
@@ -92,10 +94,14 @@ async function getRestaurants(lat, lng, stationName) {
         </div>`;
     });
     document.getElementById("restaurants").innerHTML = html;
+    delete window[callbackName];
   };
 
   const script = document.createElement("script");
   script.src = url;
+  script.onerror = () => {
+    document.getElementById("restaurants").innerHTML = `<p>レストランの取得に失敗しました。</p>`;
+  };
   document.body.appendChild(script);
 }
 
