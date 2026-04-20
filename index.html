@@ -109,7 +109,7 @@ async function calc() {
 
   const stations = await getNearestStations(avgLat, avgLng);
   document.getElementById("result").innerHTML =
-    `<b>中間地点の最寄り駅：</b><br>` + stations.join("<br>");
+    `<b>中間地点の最寄り駅（最大5駅）：</b><br>` + stations.join("<br>");
 
   showMap(avgLat, avgLng, markerPositions);
 }
