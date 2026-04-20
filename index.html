@@ -49,7 +49,7 @@ async function getNearestStations(lat, lng) {
   if (!data.response || !data.response.station || data.response.station.length === 0) {
     return ["不明"];
   }
-  return data.response.station.slice(0, 3).map((s, i) =>
+  return data.response.station.slice(0, 5).map((s, i) =>
     `${i + 1}. ${s.name}駅（${s.line}）`
   );
 }
