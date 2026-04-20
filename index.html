@@ -72,7 +72,6 @@ async function getNearestStations(lat, lng) {
 
 async function getRestaurants(lat, lng, stationName) {
   document.getElementById("restaurants").innerHTML = `<p>${stationName}周辺のレストランを検索中...</p>`;
-  
   try {
     const url = `https://webservice.recruit.co.jp/hotpepper/gourmet/v1/?key=${hotpepperKey}&lat=${lat}&lng=${lng}&range=3&count=5&format=xml`;
     const res = await fetch(url);
@@ -80,22 +79,20 @@ async function getRestaurants(lat, lng, stationName) {
     const parser = new DOMParser();
     const xml = parser.parseFromString(text, "text/xml");
     const shops = xml.querySelectorAll("shop");
-    
     if (shops.length === 0) {
       document.getElementById("restaurants").innerHTML = `<p>レストランが見つかりませんでした。</p>`;
       return;
     }
-    
     let html = `<h3>${stationName}駅周辺のおすすめレストラン</h3>`;
     shops.forEach(shop => {
       const name = shop.querySelector("name")?.textContent || "";
       const genre = shop.querySelector("genre name")?.textContent || "";
       const budget = shop.querySelector("budget name")?.textContent || "";
       const catchText = shop.querySelector("catch")?.textContent || "";
-      const url = shop.querySelector("urls pc")?.textContent || "";
+      const pcUrl = shop.querySelector("urls pc")?.textContent || "";
       html += `
         <div class="restaurant">
-          <a href="${url}" target="_blank">
+          <a href="${pcUrl}" target="_blank">
             <b>${name}</b><br>
             ${genre}　${budget}<br>
             ${catchText}
@@ -106,13 +103,6 @@ async function getRestaurants(lat, lng, stationName) {
   } catch(e) {
     document.getElementById("restaurants").innerHTML = `<p>レストランの取得に失敗しました。</p>`;
   }
-}
-  const script = document.createElement("script");
-  script.src = url;
-  script.onerror = () => {
-    document.getElementById("restaurants").innerHTML = `<p>レストランの取得に失敗しました。</p>`;
-  };
-  document.body.appendChild(script);
 }
 
 let map = null;
@@ -135,7 +125,6 @@ async function showMap(lat, lng, inputPositions, nearestStations) {
 
   const bounds = new google.maps.LatLngBounds();
 
-  // 入力駅：青
   inputPositions.forEach(pos => {
     markers.push(new google.maps.Marker({
       position: pos,
@@ -145,7 +134,6 @@ async function showMap(lat, lng, inputPositions, nearestStations) {
     bounds.extend(pos);
   });
 
-  // 中間地点：赤
   markers.push(new google.maps.Marker({
     position: { lat, lng },
     map,
@@ -154,7 +142,6 @@ async function showMap(lat, lng, inputPositions, nearestStations) {
   }));
   bounds.extend({ lat, lng });
 
-  // 最寄り駅：黄（クリックでレストラン表示）
   for (const s of nearestStations) {
     const coords = await getLatLng(s.name);
     if (coords) {
