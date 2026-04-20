@@ -188,7 +188,7 @@ async function calc() {
   const nearestStations = await getNearestStations(avgLat, avgLng);
   document.getElementById("result").innerHTML =
     `<b>中間地点の最寄り駅（最大5駅）：</b><br>` +
-    nearestStations.map((s, i) => `${i + 1}. <a href="#" onclick="getRestaurants(0,0,'${s.name}'); return false;">${s.name}駅（${s.line}）</a>`).join("<br>");
+    nearestStations.map((s, i) => `${i + 1}. <a href="#" onclick="getRestaurants(${s.y},${s.x},'${s.name}'); return false;">${s.name}駅（${s.line}）</a>`).join("<br>");
 
   await showMap(avgLat, avgLng, inputPositions, nearestStations);
 }
