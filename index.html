@@ -32,24 +32,16 @@ async function getLatLng(name) {
   return data.results[0].geometry.location;
 }
 
-function distance(lat1, lng1, lat2, lng2) {
-  const R = 6371;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLng = (lng2 - lng1) * Math.PI / 180;
-  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-    Math.sin(dLng/2) * Math.sin(dLng/2);
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-}
-
-async function getNearestStation(lat, lng) {
+async function getNearestStations(lat, lng) {
   const url = `https://express.heartrails.com/api/json?method=getStations&x=${lng}&y=${lat}`;
   const res = await fetch(url);
   const data = await res.json();
   if (!data.response || !data.response.station || data.response.station.length === 0) {
-    return "不明";
+    return ["不明"];
   }
-  return data.response.station[0].name + "駅（" + data.response.station[0].line + "）";
+  return data.response.station.slice(0, 3).map((s, i) =>
+    `${i + 1}. ${s.name}駅（${s.line}）`
+  );
 }
 
 async function calc() {
@@ -67,8 +59,9 @@ async function calc() {
   if (count === 0) return;
   const avgLat = sumLat / count;
   const avgLng = sumLng / count;
-  const nearest = await getNearestStation(avgLat, avgLng);
-  document.getElementById("result").innerText = `中間地点の最寄り駅: ${nearest}`;
+  const stations = await getNearestStations(avgLat, avgLng);
+  document.getElementById("result").innerHTML =
+    `<b>中間地点の最寄り駅：</b><br>` + stations.join("<br>");
 }
 </script>
 </body>
