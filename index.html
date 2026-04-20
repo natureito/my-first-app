@@ -73,30 +73,40 @@ async function getNearestStations(lat, lng) {
 async function getRestaurants(lat, lng, stationName) {
   document.getElementById("restaurants").innerHTML = `<p>${stationName}周辺のレストランを検索中...</p>`;
   
-  const callbackName = "hotpepperCallback_" + Date.now();
-  const url = `https://webservice.recruit.co.jp/hotpepper/gourmet/v1/?key=${hotpepperKey}&lat=${lat}&lng=${lng}&range=3&count=5&format=jsonp&callback=${callbackName}`;
-
-  window[callbackName] = function(data) {
-    const shops = data.results.shop;
-    if (!shops || shops.length === 0) {
+  try {
+    const url = `https://webservice.recruit.co.jp/hotpepper/gourmet/v1/?key=${hotpepperKey}&lat=${lat}&lng=${lng}&range=3&count=5&format=xml`;
+    const res = await fetch(url);
+    const text = await res.text();
+    const parser = new DOMParser();
+    const xml = parser.parseFromString(text, "text/xml");
+    const shops = xml.querySelectorAll("shop");
+    
+    if (shops.length === 0) {
       document.getElementById("restaurants").innerHTML = `<p>レストランが見つかりませんでした。</p>`;
       return;
     }
+    
     let html = `<h3>${stationName}駅周辺のおすすめレストラン</h3>`;
     shops.forEach(shop => {
+      const name = shop.querySelector("name")?.textContent || "";
+      const genre = shop.querySelector("genre name")?.textContent || "";
+      const budget = shop.querySelector("budget name")?.textContent || "";
+      const catchText = shop.querySelector("catch")?.textContent || "";
+      const url = shop.querySelector("urls pc")?.textContent || "";
       html += `
         <div class="restaurant">
-          <a href="${shop.urls.pc}" target="_blank">
-            <b>${shop.name}</b><br>
-            ${shop.genre.name}　${shop.budget.name}<br>
-            ${shop.catch}
+          <a href="${url}" target="_blank">
+            <b>${name}</b><br>
+            ${genre}　${budget}<br>
+            ${catchText}
           </a>
         </div>`;
     });
     document.getElementById("restaurants").innerHTML = html;
-    delete window[callbackName];
-  };
-
+  } catch(e) {
+    document.getElementById("restaurants").innerHTML = `<p>レストランの取得に失敗しました。</p>`;
+  }
+}
   const script = document.createElement("script");
   script.src = url;
   script.onerror = () => {
