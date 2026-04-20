@@ -55,7 +55,7 @@ async function getNearestStations(lat, lng) {
 let map = null;
 let markers = [];
 
-function showMap(lat, lng, inputPositions, nearestStations) {
+async function showMap(lat, lng, inputPositions, nearestStations) {
   const mapDiv = document.getElementById("map");
   mapDiv.style.display = "block";
   markers.forEach(m => m.setMap(null));
@@ -70,6 +70,8 @@ function showMap(lat, lng, inputPositions, nearestStations) {
     map.setCenter({ lat, lng });
   }
 
+  const bounds = new google.maps.LatLngBounds();
+
   // 入力駅：青
   inputPositions.forEach(pos => {
     markers.push(new google.maps.Marker({
@@ -77,6 +79,7 @@ function showMap(lat, lng, inputPositions, nearestStations) {
       map,
       icon: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png"
     }));
+    bounds.extend(pos);
   });
 
   // 中間地点：赤
@@ -86,9 +89,10 @@ function showMap(lat, lng, inputPositions, nearestStations) {
     title: "中間地点",
     icon: "http://maps.google.com/mapfiles/ms/icons/red-dot.png"
   }));
+  bounds.extend({ lat, lng });
 
   // 最寄り駅：黄
-  nearestStations.forEach(async s => {
+  for (const s of nearestStations) {
     const coords = await getLatLng(s.name);
     if (coords) {
       markers.push(new google.maps.Marker({
@@ -97,8 +101,11 @@ function showMap(lat, lng, inputPositions, nearestStations) {
         title: s.name + "駅",
         icon: "http://maps.google.com/mapfiles/ms/icons/yellow-dot.png"
       }));
+      bounds.extend(coords);
     }
-  });
+  }
+
+  map.fitBounds(bounds);
 }
 
 async function calc() {
@@ -126,7 +133,7 @@ async function calc() {
     `<b>中間地点の最寄り駅（最大5駅）：</b><br>` +
     nearestStations.map((s, i) => `${i + 1}. ${s.name}駅（${s.line}）`).join("<br>");
 
-  showMap(avgLat, avgLng, inputPositions, nearestStations);
+  await showMap(avgLat, avgLng, inputPositions, nearestStations);
 }
 </script>
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAsTNH4ojZiwp3lUaGPt8z50eFK8VdeOKE"></script>
