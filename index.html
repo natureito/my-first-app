@@ -19,6 +19,7 @@ function addInput() {
 for (let i = 0; i < 3; i++) {
   addInput();
 }
+
 async function getLatLng(name) {
   const apiKey = "AIzaSyAsTNH4ojZiwp3lUaGPt8z50eFK8VdeOKE";
   const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(name)}駅&key=${apiKey}`;
@@ -26,39 +27,48 @@ async function getLatLng(name) {
   const data = await res.json();
   if (!data.results || data.results.length === 0) {
     alert(name + " が見つかりません");
-    return { lat: 0, lng: 0 };
+    return null;
   }
   return data.results[0].geometry.location;
 }
+
+function distance(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLng/2) * Math.sin(dLng/2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
 async function getNearestStation(lat, lng) {
-  const apiKey = "AIzaSyAsTNH4ojZiwp3lUaGPt8z50eFK8VdeOKE";
-  const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&language=ja&key=${apiKey}`;
+  const url = `https://express.heartrails.com/api/json?method=getStations&x=${lng}&y=${lat}`;
   const res = await fetch(url);
   const data = await res.json();
-  if (!data.results) return "不明";
-  for (const result of data.results) {
-    const name = result.formatted_address || "";
-    if (name.includes("駅")) {
-      const match = name.match(/(\S+駅)/);
-      if (match) return match[1];
+  if (!data.response || !data.response.station || data.response.station.length === 0) {
+    return "不明";
+  }
+  return data.response.station[0].name + "駅（" + data.response.station[0].line + "）";
+}
+
+async function calc() {
+  const inputs = document.querySelectorAll(".station");
+  let sumLat = 0, sumLng = 0, count = 0;
+  for (let i = 0; i < inputs.length; i++) {
+    if (!inputs[i].value) continue;
+    const coords = await getLatLng(inputs[i].value);
+    if (coords) {
+      sumLat += coords.lat;
+      sumLng += coords.lng;
+      count++;
     }
   }
-  return data.results[0].formatted_address;
-}
-async function calc() {
-  const stations = document.querySelectorAll(".station");
-  let sumLat = 0;
-  let sumLng = 0;
-  for (let i = 0; i < stations.length; i++) {
-    const coords = await getLatLng(stations[i].value);
-    sumLat += coords.lat;
-    sumLng += coords.lng;
-  }
-  const avgLat = sumLat / stations.length;
-  const avgLng = sumLng / stations.length;
-  const nearestStation = await getNearestStation(avgLat, avgLng);
-  document.getElementById("result").innerText =
-    `中間地点の最寄り駅: ${nearestStation}`;
+  if (count === 0) return;
+  const avgLat = sumLat / count;
+  const avgLng = sumLng / count;
+  const nearest = await getNearestStation(avgLat, avgLng);
+  document.getElementById("result").innerText = `中間地点の最寄り駅: ${nearest}`;
 }
 </script>
 </body>
