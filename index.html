@@ -3,6 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <title>中間地点アプリ</title>
+  <style>
+    #map {
+      width: 100%;
+      height: 400px;
+      margin-top: 20px;
+      display: none;
+    }
+  </style>
 </head>
 <body>
 <h1>駅の中間地点アプリ（複数人対応）</h1>
@@ -10,6 +18,7 @@
 <button onclick="addInput()">＋ 人を追加</button>
 <button onclick="calc()">中間地点を計算</button>
 <p id="result"></p>
+<div id="map"></div>
 <script>
 function addInput() {
   const div = document.createElement("div");
@@ -20,8 +29,9 @@ for (let i = 0; i < 3; i++) {
   addInput();
 }
 
+const apiKey = "AIzaSyAsTNH4ojZiwp3lUaGPt8z50eFK8VdeOKE";
+
 async function getLatLng(name) {
-  const apiKey = "AIzaSyAsTNH4ojZiwp3lUaGPt8z50eFK8VdeOKE";
   const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(name)}駅&key=${apiKey}`;
   const res = await fetch(url);
   const data = await res.json();
@@ -44,9 +54,44 @@ async function getNearestStations(lat, lng) {
   );
 }
 
+let map = null;
+
+function showMap(lat, lng, markerPositions) {
+  const mapDiv = document.getElementById("map");
+  mapDiv.style.display = "block";
+
+  if (!map) {
+    map = new google.maps.Map(mapDiv, {
+      center: { lat, lng },
+      zoom: 13,
+    });
+  } else {
+    map.setCenter({ lat, lng });
+  }
+
+  // 中間地点のマーカー
+  new google.maps.Marker({
+    position: { lat, lng },
+    map,
+    title: "中間地点",
+    icon: "http://maps.google.com/mapfiles/ms/icons/red-dot.png"
+  });
+
+  // 入力駅のマーカー
+  markerPositions.forEach(pos => {
+    new google.maps.Marker({
+      position: pos,
+      map,
+      icon: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png"
+    });
+  });
+}
+
 async function calc() {
   const inputs = document.querySelectorAll(".station");
   let sumLat = 0, sumLng = 0, count = 0;
+  const markerPositions = [];
+
   for (let i = 0; i < inputs.length; i++) {
     if (!inputs[i].value) continue;
     const coords = await getLatLng(inputs[i].value);
@@ -54,15 +99,21 @@ async function calc() {
       sumLat += coords.lat;
       sumLng += coords.lng;
       count++;
+      markerPositions.push(coords);
     }
   }
   if (count === 0) return;
+
   const avgLat = sumLat / count;
   const avgLng = sumLng / count;
+
   const stations = await getNearestStations(avgLat, avgLng);
   document.getElementById("result").innerHTML =
     `<b>中間地点の最寄り駅：</b><br>` + stations.join("<br>");
+
+  showMap(avgLat, avgLng, markerPositions);
 }
 </script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAsTNH4ojZiwp3lUaGPt8z50eFK8VdeOKE"></script>
 </body>
 </html>
