@@ -47,7 +47,6 @@ for (let i = 0; i < 3; i++) {
 }
 
 const apiKey = "AIzaSyAsTNH4ojZiwp3lUaGPt8z50eFK8VdeOKE";
-const hotpepperKey = "9db61dc2b2324616";
 
 async function getLatLng(name) {
   const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(name)}駅&key=${apiKey}`;
@@ -70,39 +69,14 @@ async function getNearestStations(lat, lng) {
   return data.response.station.slice(0, 5);
 }
 
-async function getRestaurants(lat, lng, stationName) {
-  document.getElementById("restaurants").innerHTML = `<p>${stationName}周辺のレストランを検索中...</p>`;
-  try {
-    const url = `https://webservice.recruit.co.jp/hotpepper/gourmet/v1/?key=${hotpepperKey}&lat=${lat}&lng=${lng}&range=3&count=5&format=xml`;
-    const res = await fetch(url);
-    const text = await res.text();
-    const parser = new DOMParser();
-    const xml = parser.parseFromString(text, "text/xml");
-    const shops = xml.querySelectorAll("shop");
-    if (shops.length === 0) {
-      document.getElementById("restaurants").innerHTML = `<p>レストランが見つかりませんでした。</p>`;
-      return;
-    }
-    let html = `<h3>${stationName}駅周辺のおすすめレストラン</h3>`;
-    shops.forEach(shop => {
-      const name = shop.querySelector("name")?.textContent || "";
-      const genre = shop.querySelector("genre name")?.textContent || "";
-      const budget = shop.querySelector("budget name")?.textContent || "";
-      const catchText = shop.querySelector("catch")?.textContent || "";
-      const pcUrl = shop.querySelector("urls pc")?.textContent || "";
-      html += `
-        <div class="restaurant">
-          <a href="${pcUrl}" target="_blank">
-            <b>${name}</b><br>
-            ${genre}　${budget}<br>
-            ${catchText}
-          </a>
-        </div>`;
-    });
-    document.getElementById("restaurants").innerHTML = html;
-  } catch(e) {
-    document.getElementById("restaurants").innerHTML = `<p>レストランの取得に失敗しました。</p>`;
-  }
+function showRestaurants(lat, lng, stationName) {
+  const url = `https://www.google.com/maps/search/レストラン/@${lat},${lng},16z`;
+  document.getElementById("restaurants").innerHTML = `
+    <div class="restaurant">
+      <a href="${url}" target="_blank">
+        🍽️ ${stationName}駅周辺のレストランをGoogle Mapsで見る
+      </a>
+    </div>`;
 }
 
 let map = null;
@@ -152,7 +126,7 @@ async function showMap(lat, lng, inputPositions, nearestStations) {
         icon: "http://maps.google.com/mapfiles/ms/icons/yellow-dot.png"
       });
       marker.addListener("click", () => {
-        getRestaurants(coords.lat, coords.lng, s.name);
+        showRestaurants(coords.lat, coords.lng, s.name);
       });
       markers.push(marker);
       bounds.extend(coords);
@@ -185,7 +159,7 @@ async function calc() {
   const nearestStations = await getNearestStations(avgLat, avgLng);
   document.getElementById("result").innerHTML =
     `<b>中間地点の最寄り駅（最大5駅）：</b><br>` +
-    nearestStations.map((s, i) => `${i + 1}. <a href="#" onclick="getRestaurants(${s.y},${s.x},'${s.name}'); return false;">${s.name}駅（${s.line}）</a>`).join("<br>");
+    nearestStations.map((s, i) => `${i + 1}. <a href="#" onclick="showRestaurants(${s.y},${s.x},'${s.name}'); return false;">${s.name}駅（${s.line}）</a>`).join("<br>");
 
   await showMap(avgLat, avgLng, inputPositions, nearestStations);
 }
