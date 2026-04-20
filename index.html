@@ -55,10 +55,13 @@ async function getNearestStations(lat, lng) {
 }
 
 let map = null;
+let markers = [];
 
 function showMap(lat, lng, markerPositions) {
   const mapDiv = document.getElementById("map");
   mapDiv.style.display = "block";
+  markers.forEach(m => m.setMap(null));
+  markers = [];
 
   if (!map) {
     map = new google.maps.Map(mapDiv, {
@@ -69,21 +72,19 @@ function showMap(lat, lng, markerPositions) {
     map.setCenter({ lat, lng });
   }
 
-  // 中間地点のマーカー
-  new google.maps.Marker({
+  markers.push(new google.maps.Marker({
     position: { lat, lng },
     map,
     title: "中間地点",
     icon: "http://maps.google.com/mapfiles/ms/icons/red-dot.png"
-  });
+  }));
 
-  // 入力駅のマーカー
   markerPositions.forEach(pos => {
-    new google.maps.Marker({
+    markers.push(new google.maps.Marker({
       position: pos,
       map,
       icon: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png"
-    });
+    }));
   });
 }
 
