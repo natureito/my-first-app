@@ -35,8 +35,11 @@
     .contact-item {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       margin: 5px 0;
+    }
+    .contact-item input {
+      width: 100px;
     }
     .input-row {
       display: flex;
@@ -67,7 +70,6 @@
 <div id="restaurants"></div>
 
 <script>
-// 連絡先管理
 function loadContacts() {
   return JSON.parse(localStorage.getItem("contacts") || "[]");
 }
@@ -93,6 +95,7 @@ function addContact() {
 }
 
 function deleteContact(index) {
+  if (!confirm("削除しますか？")) return;
   const contacts = loadContacts();
   contacts.splice(index, 1);
   saveContacts(contacts);
@@ -100,22 +103,64 @@ function deleteContact(index) {
   updateAllDropdowns();
 }
 
-function renderContactList() {
+function moveContact(index, direction) {
+  const contacts = loadContacts();
+  const newIndex = index + direction;
+  if (newIndex < 0 || newIndex >= contacts.length) return;
+  [contacts[index], contacts[newIndex]] = [contacts[newIndex], contacts[index]];
+  saveContacts(contacts);
+  renderContactList();
+  updateAllDropdowns();
+}
+
+function startEdit(index) {
+  renderContactList(index);
+}
+
+function saveEdit(index) {
+  const nameInput = document.getElementById(`edit-name-${index}`);
+  const stationInput = document.getElementById(`edit-station-${index}`);
+  const name = nameInput.value.trim();
+  const station = stationInput.value.trim();
+  if (!name || !station) {
+    alert("名前と最寄り駅を入力してください");
+    return;
+  }
+  const contacts = loadContacts();
+  contacts[index] = { name, station };
+  saveContacts(contacts);
+  renderContactList();
+  updateAllDropdowns();
+}
+
+function renderContactList(editIndex = -1) {
   const contacts = loadContacts();
   const div = document.getElementById("contact-list");
   if (contacts.length === 0) {
     div.innerHTML = "<p>登録された連絡先はありません</p>";
     return;
   }
-  div.innerHTML = contacts.map((c, i) => `
-    <div class="contact-item">
-      <span>👤 ${c.name}（${c.station}駅）</span>
-      <button onclick="deleteContact(${i})">削除</button>
-    </div>
-  `).join("");
+  div.innerHTML = contacts.map((c, i) => {
+    if (i === editIndex) {
+      return `
+        <div class="contact-item">
+          <input id="edit-name-${i}" type="text" value="${c.name}">
+          <input id="edit-station-${i}" type="text" value="${c.station}">
+          <button onclick="saveEdit(${i})">保存</button>
+          <button onclick="renderContactList()">キャンセル</button>
+        </div>`;
+    }
+    return `
+      <div class="contact-item">
+        <span>👤 ${c.name}（${c.station}駅）</span>
+        <button onclick="startEdit(${i})">編集</button>
+        <button onclick="deleteContact(${i})">削除</button>
+        <button onclick="moveContact(${i}, -1)" ${i === 0 ? "disabled" : ""}>↑</button>
+        <button onclick="moveContact(${i}, 1)" ${i === contacts.length - 1 ? "disabled" : ""}>↓</button>
+      </div>`;
+  }).join("");
 }
 
-// プルダウンの選択肢を生成
 function buildOptions() {
   const contacts = loadContacts();
   let options = `<option value="">-- 人を選ぶ --</option>`;
@@ -125,7 +170,6 @@ function buildOptions() {
   return options;
 }
 
-// 全入力欄のプルダウンを更新
 function updateAllDropdowns() {
   document.querySelectorAll(".contact-select").forEach(sel => {
     const current = sel.value;
@@ -134,7 +178,6 @@ function updateAllDropdowns() {
   });
 }
 
-// プルダウン選択時に駅名入力欄に反映
 function onSelectContact(sel) {
   const stationInput = sel.parentElement.querySelector(".station");
   if (sel.value) {
@@ -142,7 +185,6 @@ function onSelectContact(sel) {
   }
 }
 
-// 駅入力欄
 function addInput() {
   const div = document.createElement("div");
   div.className = "input-row";
@@ -156,7 +198,6 @@ function addInput() {
   document.getElementById("inputs").appendChild(div);
 }
 
-// 起動時
 renderContactList();
 for (let i = 0; i < 3; i++) {
   addInput();
