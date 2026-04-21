@@ -38,6 +38,12 @@
       gap: 10px;
       margin: 5px 0;
     }
+    .input-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 5px 0;
+    }
   </style>
 </head>
 <body>
@@ -83,6 +89,7 @@ function addContact() {
   document.getElementById("contact-name").value = "";
   document.getElementById("contact-station").value = "";
   renderContactList();
+  updateAllDropdowns();
 }
 
 function deleteContact(index) {
@@ -90,6 +97,7 @@ function deleteContact(index) {
   contacts.splice(index, 1);
   saveContacts(contacts);
   renderContactList();
+  updateAllDropdowns();
 }
 
 function renderContactList() {
@@ -107,15 +115,49 @@ function renderContactList() {
   `).join("");
 }
 
-// 起動時に連絡先を表示
-renderContactList();
+// プルダウンの選択肢を生成
+function buildOptions() {
+  const contacts = loadContacts();
+  let options = `<option value="">-- 人を選ぶ --</option>`;
+  contacts.forEach(c => {
+    options += `<option value="${c.station}">${c.name}（${c.station}駅）</option>`;
+  });
+  return options;
+}
+
+// 全入力欄のプルダウンを更新
+function updateAllDropdowns() {
+  document.querySelectorAll(".contact-select").forEach(sel => {
+    const current = sel.value;
+    sel.innerHTML = buildOptions();
+    sel.value = current;
+  });
+}
+
+// プルダウン選択時に駅名入力欄に反映
+function onSelectContact(sel) {
+  const stationInput = sel.parentElement.querySelector(".station");
+  if (sel.value) {
+    stationInput.value = sel.value;
+  }
+}
 
 // 駅入力欄
 function addInput() {
   const div = document.createElement("div");
-  div.innerHTML = `駅名: <input type="text" class="station">`;
+  div.className = "input-row";
+  div.innerHTML = `
+    <select class="contact-select" onchange="onSelectContact(this)">
+      ${buildOptions()}
+    </select>
+    駅名: <input type="text" class="station" placeholder="または直接入力">
+    <button onclick="this.parentElement.remove()">×</button>
+  `;
   document.getElementById("inputs").appendChild(div);
 }
+
+// 起動時
+renderContactList();
 for (let i = 0; i < 3; i++) {
   addInput();
 }
