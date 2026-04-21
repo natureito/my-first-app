@@ -26,17 +26,91 @@
     .restaurant:hover {
       background: #f5f5f5;
     }
+    #contacts-section {
+      margin-bottom: 20px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    .contact-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 5px 0;
+    }
   </style>
 </head>
 <body>
 <h1>駅の中間地点アプリ（複数人対応）</h1>
+
+<div id="contacts-section">
+  <h2>👥 連絡先管理</h2>
+  <div>
+    名前: <input type="text" id="contact-name" placeholder="例：田中さん">
+    最寄り駅: <input type="text" id="contact-station" placeholder="例：新宿">
+    <button onclick="addContact()">追加</button>
+  </div>
+  <div id="contact-list" style="margin-top:10px;"></div>
+</div>
+
 <div id="inputs"></div>
 <button onclick="addInput()">＋ 人を追加</button>
 <button onclick="calc()">中間地点を計算</button>
 <p id="result"></p>
 <div id="map"></div>
 <div id="restaurants"></div>
+
 <script>
+// 連絡先管理
+function loadContacts() {
+  return JSON.parse(localStorage.getItem("contacts") || "[]");
+}
+
+function saveContacts(contacts) {
+  localStorage.setItem("contacts", JSON.stringify(contacts));
+}
+
+function addContact() {
+  const name = document.getElementById("contact-name").value.trim();
+  const station = document.getElementById("contact-station").value.trim();
+  if (!name || !station) {
+    alert("名前と最寄り駅を入力してください");
+    return;
+  }
+  const contacts = loadContacts();
+  contacts.push({ name, station });
+  saveContacts(contacts);
+  document.getElementById("contact-name").value = "";
+  document.getElementById("contact-station").value = "";
+  renderContactList();
+}
+
+function deleteContact(index) {
+  const contacts = loadContacts();
+  contacts.splice(index, 1);
+  saveContacts(contacts);
+  renderContactList();
+}
+
+function renderContactList() {
+  const contacts = loadContacts();
+  const div = document.getElementById("contact-list");
+  if (contacts.length === 0) {
+    div.innerHTML = "<p>登録された連絡先はありません</p>";
+    return;
+  }
+  div.innerHTML = contacts.map((c, i) => `
+    <div class="contact-item">
+      <span>👤 ${c.name}（${c.station}駅）</span>
+      <button onclick="deleteContact(${i})">削除</button>
+    </div>
+  `).join("");
+}
+
+// 起動時に連絡先を表示
+renderContactList();
+
+// 駅入力欄
 function addInput() {
   const div = document.createElement("div");
   div.innerHTML = `駅名: <input type="text" class="station">`;
