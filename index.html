@@ -4,49 +4,20 @@
   <meta charset="UTF-8">
   <title>中間地点アプリ</title>
   <style>
-    #map {
-      width: 100%;
-      height: 400px;
-      margin-top: 20px;
-      display: none;
-    }
-    #restaurants {
-      margin-top: 20px;
-    }
-    .restaurant {
-      border: 1px solid #ccc;
-      padding: 10px;
-      margin: 5px 0;
-      border-radius: 5px;
-    }
-    .restaurant a {
-      text-decoration: none;
-      color: #333;
-    }
-    .restaurant:hover {
-      background: #f5f5f5;
-    }
-    #contacts-section {
-      margin-bottom: 20px;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-    }
-    .contact-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin: 5px 0;
-    }
-    .contact-item input {
-      width: 100px;
-    }
-    .input-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin: 5px 0;
-    }
+    body { font-family: sans-serif; padding: 10px; }
+    #map { width: 100%; height: 400px; margin-top: 20px; display: none; }
+    #restaurants { margin-top: 20px; }
+    .restaurant { border: 1px solid #ccc; padding: 10px; margin: 5px 0; border-radius: 5px; }
+    .restaurant a { text-decoration: none; color: #333; }
+    .restaurant:hover { background: #f5f5f5; }
+    #contacts-section { margin-bottom: 20px; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+    .contact-item { display: flex; align-items: center; gap: 8px; margin: 5px 0; flex-wrap: wrap; }
+    .contact-item input { width: 100px; }
+    .input-row { display: flex; align-items: center; gap: 8px; margin: 5px 0; }
+    .tag { display: inline-block; background: #e0f0ff; border-radius: 10px; padding: 2px 8px; font-size: 12px; margin: 2px; }
+    .tag-filter { display: inline-block; background: #eee; border-radius: 10px; padding: 4px 10px; font-size: 13px; margin: 3px; cursor: pointer; border: 2px solid transparent; }
+    .tag-filter.active { background: #4a90e2; color: white; border-color: #4a90e2; }
+    #group-section { margin-bottom: 20px; padding: 10px; border: 1px solid #4a90e2; border-radius: 5px; background: #f0f7ff; }
   </style>
 </head>
 <body>
@@ -57,9 +28,16 @@
   <div>
     名前: <input type="text" id="contact-name" placeholder="例：田中さん">
     最寄り駅: <input type="text" id="contact-station" placeholder="例：新宿">
+    タグ: <input type="text" id="contact-tags" placeholder="例：仕事,友人">
     <button onclick="addContact()">追加</button>
   </div>
   <div id="contact-list" style="margin-top:10px;"></div>
+</div>
+
+<div id="group-section">
+  <h2>🏷️ タグで絞り込んで計算</h2>
+  <div id="tag-filters" style="margin-bottom:10px;"></div>
+  <button onclick="calcByTag()">このタグの人で中間地点を計算</button>
 </div>
 
 <div id="inputs"></div>
@@ -78,19 +56,79 @@ function saveContacts(contacts) {
   localStorage.setItem("contacts", JSON.stringify(contacts));
 }
 
+function getAllTags() {
+  const contacts = loadContacts();
+  const tagSet = new Set();
+  contacts.forEach(c => (c.tags || []).forEach(t => tagSet.add(t)));
+  return [...tagSet];
+}
+
+let activeTag = null;
+
+function renderTagFilters() {
+  const tags = getAllTags();
+  const div = document.getElementById("tag-filters");
+  if (tags.length === 0) {
+    div.innerHTML = "<p>タグがまだありません</p>";
+    return;
+  }
+  div.innerHTML = tags.map(t => `
+    <span class="tag-filter ${activeTag === t ? 'active' : ''}" onclick="selectTag('${t}')">${t}</span>
+  `).join("");
+}
+
+function selectTag(tag) {
+  activeTag = activeTag === tag ? null : tag;
+  renderTagFilters();
+}
+
+async function calcByTag() {
+  if (!activeTag) {
+    alert("タグを選択してください");
+    return;
+  }
+  const contacts = loadContacts();
+  const filtered = contacts.filter(c => (c.tags || []).includes(activeTag));
+  if (filtered.length === 0) {
+    alert("このタグに該当する連絡先がありません");
+    return;
+  }
+
+  // 入力欄をリセットしてタグの人をセット
+  document.getElementById("inputs").innerHTML = "";
+  for (const c of filtered) {
+    const div = document.createElement("div");
+    div.className = "input-row";
+    div.innerHTML = `
+      <select class="contact-select" onchange="onSelectContact(this)">
+        ${buildOptions()}
+      </select>
+      駅名: <input type="text" class="station" value="${c.station}" placeholder="または直接入力">
+      <button onclick="this.parentElement.remove()">×</button>
+    `;
+    document.getElementById("inputs").appendChild(div);
+  }
+
+  await calc();
+}
+
 function addContact() {
   const name = document.getElementById("contact-name").value.trim();
   const station = document.getElementById("contact-station").value.trim();
+  const tagsRaw = document.getElementById("contact-tags").value.trim();
+  const tags = tagsRaw ? tagsRaw.split(",").map(t => t.trim()).filter(Boolean) : [];
   if (!name || !station) {
     alert("名前と最寄り駅を入力してください");
     return;
   }
   const contacts = loadContacts();
-  contacts.push({ name, station });
+  contacts.push({ name, station, tags });
   saveContacts(contacts);
   document.getElementById("contact-name").value = "";
   document.getElementById("contact-station").value = "";
+  document.getElementById("contact-tags").value = "";
   renderContactList();
+  renderTagFilters();
   updateAllDropdowns();
 }
 
@@ -100,6 +138,7 @@ function deleteContact(index) {
   contacts.splice(index, 1);
   saveContacts(contacts);
   renderContactList();
+  renderTagFilters();
   updateAllDropdowns();
 }
 
@@ -118,18 +157,19 @@ function startEdit(index) {
 }
 
 function saveEdit(index) {
-  const nameInput = document.getElementById(`edit-name-${index}`);
-  const stationInput = document.getElementById(`edit-station-${index}`);
-  const name = nameInput.value.trim();
-  const station = stationInput.value.trim();
+  const name = document.getElementById(`edit-name-${index}`).value.trim();
+  const station = document.getElementById(`edit-station-${index}`).value.trim();
+  const tagsRaw = document.getElementById(`edit-tags-${index}`).value.trim();
+  const tags = tagsRaw ? tagsRaw.split(",").map(t => t.trim()).filter(Boolean) : [];
   if (!name || !station) {
     alert("名前と最寄り駅を入力してください");
     return;
   }
   const contacts = loadContacts();
-  contacts[index] = { name, station };
+  contacts[index] = { name, station, tags };
   saveContacts(contacts);
   renderContactList();
+  renderTagFilters();
   updateAllDropdowns();
 }
 
@@ -141,18 +181,20 @@ function renderContactList(editIndex = -1) {
     return;
   }
   div.innerHTML = contacts.map((c, i) => {
+    const tagsHtml = (c.tags || []).map(t => `<span class="tag">${t}</span>`).join("");
     if (i === editIndex) {
       return `
         <div class="contact-item">
           <input id="edit-name-${i}" type="text" value="${c.name}">
           <input id="edit-station-${i}" type="text" value="${c.station}">
+          タグ: <input id="edit-tags-${i}" type="text" value="${(c.tags || []).join(",")}">
           <button onclick="saveEdit(${i})">保存</button>
           <button onclick="renderContactList()">キャンセル</button>
         </div>`;
     }
     return `
       <div class="contact-item">
-        <span>👤 ${c.name}（${c.station}駅）</span>
+        <span>👤 ${c.name}（${c.station}駅）${tagsHtml}</span>
         <button onclick="startEdit(${i})">編集</button>
         <button onclick="deleteContact(${i})">削除</button>
         <button onclick="moveContact(${i}, -1)" ${i === 0 ? "disabled" : ""}>↑</button>
@@ -180,9 +222,7 @@ function updateAllDropdowns() {
 
 function onSelectContact(sel) {
   const stationInput = sel.parentElement.querySelector(".station");
-  if (sel.value) {
-    stationInput.value = sel.value;
-  }
+  if (sel.value) stationInput.value = sel.value;
 }
 
 function addInput() {
@@ -199,9 +239,8 @@ function addInput() {
 }
 
 renderContactList();
-for (let i = 0; i < 3; i++) {
-  addInput();
-}
+renderTagFilters();
+for (let i = 0; i < 3; i++) addInput();
 
 const apiKey = "AIzaSyAsTNH4ojZiwp3lUaGPt8z50eFK8VdeOKE";
 
@@ -220,9 +259,7 @@ async function getNearestStations(lat, lng) {
   const url = `https://express.heartrails.com/api/json?method=getStations&x=${lng}&y=${lat}`;
   const res = await fetch(url);
   const data = await res.json();
-  if (!data.response || !data.response.station || data.response.station.length === 0) {
-    return [];
-  }
+  if (!data.response || !data.response.station || data.response.station.length === 0) return [];
   return data.response.station.slice(0, 5);
 }
 
@@ -230,9 +267,7 @@ function showRestaurants(lat, lng, stationName) {
   const url = `https://www.google.com/maps/search/レストラン/@${lat},${lng},16z`;
   document.getElementById("restaurants").innerHTML = `
     <div class="restaurant">
-      <a href="${url}" target="_blank">
-        🍽️ ${stationName}駅周辺のレストランをGoogle Mapsで見る
-      </a>
+      <a href="${url}" target="_blank">🍽️ ${stationName}駅周辺のレストランをGoogle Mapsで見る</a>
     </div>`;
 }
 
@@ -246,10 +281,7 @@ async function showMap(lat, lng, inputPositions, nearestStations) {
   markers = [];
 
   if (!map) {
-    map = new google.maps.Map(mapDiv, {
-      center: { lat, lng },
-      zoom: 13,
-    });
+    map = new google.maps.Map(mapDiv, { center: { lat, lng }, zoom: 13 });
   } else {
     map.setCenter({ lat, lng });
   }
@@ -258,17 +290,14 @@ async function showMap(lat, lng, inputPositions, nearestStations) {
 
   inputPositions.forEach(pos => {
     markers.push(new google.maps.Marker({
-      position: pos,
-      map,
+      position: pos, map,
       icon: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png"
     }));
     bounds.extend(pos);
   });
 
   markers.push(new google.maps.Marker({
-    position: { lat, lng },
-    map,
-    title: "中間地点",
+    position: { lat, lng }, map, title: "中間地点",
     icon: "http://maps.google.com/mapfiles/ms/icons/red-dot.png"
   }));
   bounds.extend({ lat, lng });
@@ -277,19 +306,14 @@ async function showMap(lat, lng, inputPositions, nearestStations) {
     const coords = await getLatLng(s.name);
     if (coords) {
       const marker = new google.maps.Marker({
-        position: coords,
-        map,
-        title: s.name + "駅",
+        position: coords, map, title: s.name + "駅",
         icon: "http://maps.google.com/mapfiles/ms/icons/yellow-dot.png"
       });
-      marker.addListener("click", () => {
-        showRestaurants(coords.lat, coords.lng, s.name);
-      });
+      marker.addListener("click", () => showRestaurants(coords.lat, coords.lng, s.name));
       markers.push(marker);
       bounds.extend(coords);
     }
   }
-
   map.fitBounds(bounds);
 }
 
