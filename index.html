@@ -5,96 +5,306 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>中間地点アプリ</title>
   <style>
-    body { font-family: sans-serif; padding: 10px; max-width: 800px; margin: 0 auto; }
-    #map { width: 100%; height: 400px; margin-top: 20px; display: none; }
-    #restaurants { margin-top: 20px; }
-    .restaurant { border: 1px solid #ccc; padding: 10px; margin: 5px 0; border-radius: 5px; }
-    .restaurant a { text-decoration: none; color: #333; }
-    .restaurant:hover { background: #f5f5f5; }
-    #contacts-section { margin-bottom: 20px; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
-    .contact-item { display: flex; align-items: center; gap: 8px; margin: 5px 0; flex-wrap: wrap; }
-    .contact-item input { width: 100px; }
-    .input-row { display: flex; align-items: center; gap: 8px; margin: 5px 0; flex-wrap: wrap; }
-    .tag { display: inline-block; background: #e0f0ff; border-radius: 10px; padding: 2px 8px; font-size: 12px; margin: 2px; }
-    .tag-filter { display: inline-block; background: #eee; border-radius: 10px; padding: 4px 10px; font-size: 13px; margin: 3px; cursor: pointer; border: 2px solid transparent; }
-    .tag-filter.active { background: #4a90e2; color: white; border-color: #4a90e2; }
-    #group-section { margin-bottom: 20px; padding: 10px; border: 1px solid #4a90e2; border-radius: 5px; background: #f0f7ff; }
-    #csv-section { margin-top: 10px; padding: 8px; background: #f9f9f9; border-radius: 5px; font-size: 13px; }
-    #last-train-section { margin-top: 20px; }
-    .last-train-card {
-      border: 1px solid #ddd;
+    :root {
+      --bg: #f5f5f5;
+      --card: #ffffff;
+      --text: #333;
+      --subtext: #666;
+      --border: #ddd;
+      --primary: #4a90e2;
+      --primary-dark: #357abd;
+      --tag-bg: #e0f0ff;
+      --section-bg: #f0f7ff;
+      --shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    body.dark {
+      --bg: #1a1a2e;
+      --card: #16213e;
+      --text: #eee;
+      --subtext: #aaa;
+      --border: #444;
+      --primary: #4a90e2;
+      --primary-dark: #357abd;
+      --tag-bg: #1a3a5c;
+      --section-bg: #0f2d4a;
+      --shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 16px;
+      max-width: 600px;
+      margin: 0 auto;
+      transition: background 0.3s, color 0.3s;
+    }
+    h1 { font-size: 20px; margin-bottom: 16px; }
+    h2 { font-size: 16px; margin: 0 0 10px; }
+    h3 { font-size: 15px; margin: 12px 0 8px; }
+
+    .card {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 14px;
+      box-shadow: var(--shadow);
+    }
+
+    input[type="text"], select {
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 7px 10px;
+      font-size: 14px;
+      outline: none;
+    }
+    input[type="text"]:focus, select:focus {
+      border-color: var(--primary);
+    }
+
+    button {
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 7px 14px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    button:hover { background: var(--primary-dark); }
+    button.secondary {
+      background: var(--border);
+      color: var(--text);
+    }
+    button.secondary:hover { background: #bbb; }
+    button.danger {
+      background: #e74c3c;
+    }
+    button.danger:hover { background: #c0392b; }
+    button.small {
+      padding: 4px 10px;
+      font-size: 12px;
+    }
+
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .dark-toggle {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 20px;
+      padding: 5px 12px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .contact-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin: 6px 0;
+      flex-wrap: wrap;
+    }
+    .contact-item input { width: 90px; }
+
+    .input-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 6px 0;
+      flex-wrap: wrap;
+    }
+
+    .tag {
+      display: inline-block;
+      background: var(--tag-bg);
+      color: var(--primary);
       border-radius: 10px;
-      padding: 12px 16px;
+      padding: 2px 8px;
+      font-size: 12px;
+      margin: 2px;
+    }
+    .tag-filter {
+      display: inline-block;
+      background: var(--border);
+      color: var(--text);
+      border-radius: 20px;
+      padding: 5px 12px;
+      font-size: 13px;
+      margin: 3px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.2s;
+    }
+    .tag-filter.active {
+      background: var(--primary);
+      color: white;
+    }
+
+    #map { width: 100%; height: 380px; margin-top: 14px; display: none; border-radius: 12px; overflow: hidden; }
+
+    .last-train-card {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
       margin: 8px 0;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: #fff;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      background: var(--card);
+      box-shadow: var(--shadow);
     }
-    .last-train-card:hover { background: #f9f9f9; }
     .last-train-info { flex: 1; }
-    .last-train-name { font-weight: bold; font-size: 15px; }
-    .last-train-route { color: #666; font-size: 13px; margin-top: 3px; }
+    .last-train-name { font-weight: bold; font-size: 14px; }
+    .last-train-route { color: var(--subtext); font-size: 12px; margin-top: 3px; }
     .last-train-link {
       display: inline-block;
-      background: #4a90e2;
+      background: var(--primary);
       color: white;
       border-radius: 20px;
-      padding: 6px 14px;
-      font-size: 13px;
+      padding: 6px 12px;
+      font-size: 12px;
       text-decoration: none;
       white-space: nowrap;
     }
-    .last-train-link:hover { background: #357abd; }
+
+    .genre-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .genre-btn {
+      background: var(--card);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 7px 14px;
+      font-size: 13px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      transition: all 0.2s;
+    }
+    .genre-btn:hover {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    #csv-section {
+      margin-top: 10px;
+      padding: 8px;
+      background: var(--bg);
+      border-radius: 8px;
+      font-size: 13px;
+      color: var(--subtext);
+    }
+
+    .result-station {
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .result-station:last-child { border-bottom: none; }
+    .result-station a {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 15px;
+    }
+    .result-station .line-name {
+      color: var(--subtext);
+      font-size: 12px;
+      margin-top: 2px;
+    }
+
     @media (max-width: 480px) {
       .last-train-card { flex-direction: column; align-items: flex-start; gap: 8px; }
-      .last-train-link { width: 100%; text-align: center; box-sizing: border-box; }
+      .last-train-link { width: 100%; text-align: center; }
+      .genre-buttons { gap: 6px; }
+      .genre-btn { padding: 6px 10px; font-size: 12px; }
     }
   </style>
 </head>
 <body>
-<h1>駅の中間地点アプリ（複数人対応）</h1>
 
-<div id="contacts-section">
+<div class="header-row">
+  <h1>📍 中間地点アプリ</h1>
+  <button class="dark-toggle" onclick="toggleDark()">🌙 ダーク</button>
+</div>
+
+<div class="card">
   <h2>👥 連絡先管理</h2>
-  <div>
-    名前: <input type="text" id="contact-name" placeholder="例：田中さん">
-    最寄り駅: <input type="text" id="contact-station" placeholder="例：新宿">
-    タグ: <input type="text" id="contact-tags" placeholder="例：仕事,友人">
+  <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px;">
+    <input type="text" id="contact-name" placeholder="名前">
+    <input type="text" id="contact-station" placeholder="最寄り駅">
+    <input type="text" id="contact-tags" placeholder="タグ（例：仕事,友人）">
     <button onclick="addContact()">追加</button>
   </div>
   <div id="csv-section">
-    📂 CSVから一括取り込み：
+    📂 CSVから取り込み：
     <input type="file" id="csv-file" accept=".csv">
     <button onclick="importCSV()">取り込む</button>
-    <span style="color:#888;">※ 形式：名前,最寄り駅,タグ（例：田中さん,新宿,仕事,友人）</span>
   </div>
   <div id="contact-list" style="margin-top:10px;"></div>
 </div>
 
-<div id="group-section">
+<div class="card" style="border: 1px solid var(--primary);">
   <h2>🏷️ タグで絞り込んで計算</h2>
   <div id="tag-filters" style="margin-bottom:10px;"></div>
   <button onclick="calcByTag()">このタグの人で中間地点を計算</button>
 </div>
 
-<div id="inputs"></div>
-<button onclick="addInput()">＋ 人を追加</button>
-<button onclick="calc()">中間地点を計算</button>
-<p id="result"></p>
+<div class="card">
+  <h2>🚉 出発駅を入力</h2>
+  <div id="inputs"></div>
+  <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+    <button class="secondary" onclick="addInput()">＋ 人を追加</button>
+    <button onclick="calc()">中間地点を計算</button>
+  </div>
+</div>
+
+<div id="result-card" style="display:none;" class="card">
+  <h2>📌 中間地点の最寄り駅（最大5駅）</h2>
+  <div id="result"></div>
+</div>
+
 <div id="map"></div>
+
 <div id="last-train-section"></div>
-<div id="restaurants"></div>
+
+<div id="genre-section" style="display:none;" class="card">
+  <h2 id="genre-title">🍽️ 周辺のお店を探す</h2>
+  <div class="genre-buttons" id="genre-buttons"></div>
+</div>
 
 <script>
-// 現在の参加者リスト（終電表示用）
 let currentParticipants = [];
+let currentStationName = "";
+let currentStationLat = 0;
+let currentStationLng = 0;
+
+function toggleDark() {
+  document.body.classList.toggle("dark");
+  const btn = document.querySelector(".dark-toggle");
+  btn.textContent = document.body.classList.contains("dark") ? "☀️ ライト" : "🌙 ダーク";
+  localStorage.setItem("darkMode", document.body.classList.contains("dark") ? "1" : "0");
+}
+
+if (localStorage.getItem("darkMode") === "1") {
+  document.body.classList.add("dark");
+  document.querySelector(".dark-toggle").textContent = "☀️ ライト";
+}
 
 function loadContacts() {
   return JSON.parse(localStorage.getItem("contacts") || "[]");
 }
-
 function saveContacts(contacts) {
   localStorage.setItem("contacts", JSON.stringify(contacts));
 }
@@ -111,17 +321,14 @@ function importCSV() {
       if (line.startsWith("名前") || line.startsWith("name")) continue;
       const cols = line.split(",").map(c => c.trim());
       if (cols.length < 2) continue;
-      const name = cols[0];
-      const station = cols[1];
+      const name = cols[0], station = cols[1];
       const tags = cols.slice(2).filter(Boolean);
       if (name && station) { contacts.push({ name, station, tags }); added++; }
     }
     saveContacts(contacts);
-    renderContactList();
-    renderTagFilters();
-    updateAllDropdowns();
+    renderContactList(); renderTagFilters(); updateAllDropdowns();
     document.getElementById("csv-file").value = "";
-    alert(`${added}件の連絡先を取り込みました`);
+    alert(`${added}件取り込みました`);
   };
   reader.readAsText(file, "UTF-8");
 }
@@ -138,7 +345,7 @@ let activeTag = null;
 function renderTagFilters() {
   const tags = getAllTags();
   const div = document.getElementById("tag-filters");
-  if (tags.length === 0) { div.innerHTML = "<p>タグがまだありません</p>"; return; }
+  if (tags.length === 0) { div.innerHTML = "<p style='color:var(--subtext);font-size:13px;'>タグがまだありません</p>"; return; }
   div.innerHTML = tags.map(t => `
     <span class="tag-filter ${activeTag === t ? 'active' : ''}" onclick="selectTag('${t}')">${t}</span>
   `).join("");
@@ -153,18 +360,16 @@ async function calcByTag() {
   if (!activeTag) { alert("タグを選択してください"); return; }
   const contacts = loadContacts();
   const filtered = contacts.filter(c => (c.tags || []).includes(activeTag));
-  if (filtered.length === 0) { alert("このタグに該当する連絡先がありません"); return; }
+  if (filtered.length === 0) { alert("該当する連絡先がありません"); return; }
   document.getElementById("inputs").innerHTML = "";
   for (const c of filtered) {
     const div = document.createElement("div");
     div.className = "input-row";
     div.innerHTML = `
-      <select class="contact-select" onchange="onSelectContact(this)">
-        ${buildOptions()}
-      </select>
-      駅名: <input type="text" class="station" value="${c.station}" placeholder="または直接入力">
+      <select class="contact-select" onchange="onSelectContact(this)">${buildOptions()}</select>
+      <input type="text" class="station" value="${c.station}" placeholder="駅名">
       <span class="participant-name" style="display:none;">${c.name}</span>
-      <button onclick="this.parentElement.remove()">×</button>
+      <button class="secondary small" onclick="this.parentElement.remove()">×</button>
     `;
     document.getElementById("inputs").appendChild(div);
   }
@@ -183,9 +388,7 @@ function addContact() {
   document.getElementById("contact-name").value = "";
   document.getElementById("contact-station").value = "";
   document.getElementById("contact-tags").value = "";
-  renderContactList();
-  renderTagFilters();
-  updateAllDropdowns();
+  renderContactList(); renderTagFilters(); updateAllDropdowns();
 }
 
 function deleteContact(index) {
@@ -193,9 +396,7 @@ function deleteContact(index) {
   const contacts = loadContacts();
   contacts.splice(index, 1);
   saveContacts(contacts);
-  renderContactList();
-  renderTagFilters();
-  updateAllDropdowns();
+  renderContactList(); renderTagFilters(); updateAllDropdowns();
 }
 
 function moveContact(index, direction) {
@@ -204,8 +405,7 @@ function moveContact(index, direction) {
   if (newIndex < 0 || newIndex >= contacts.length) return;
   [contacts[index], contacts[newIndex]] = [contacts[newIndex], contacts[index]];
   saveContacts(contacts);
-  renderContactList();
-  updateAllDropdowns();
+  renderContactList(); updateAllDropdowns();
 }
 
 function startEdit(index) { renderContactList(index); }
@@ -219,15 +419,13 @@ function saveEdit(index) {
   const contacts = loadContacts();
   contacts[index] = { name, station, tags };
   saveContacts(contacts);
-  renderContactList();
-  renderTagFilters();
-  updateAllDropdowns();
+  renderContactList(); renderTagFilters(); updateAllDropdowns();
 }
 
 function renderContactList(editIndex = -1) {
   const contacts = loadContacts();
   const div = document.getElementById("contact-list");
-  if (contacts.length === 0) { div.innerHTML = "<p>登録された連絡先はありません</p>"; return; }
+  if (contacts.length === 0) { div.innerHTML = "<p style='color:var(--subtext);font-size:13px;'>登録された連絡先はありません</p>"; return; }
   div.innerHTML = contacts.map((c, i) => {
     const tagsHtml = (c.tags || []).map(t => `<span class="tag">${t}</span>`).join("");
     if (i === editIndex) {
@@ -236,17 +434,17 @@ function renderContactList(editIndex = -1) {
           <input id="edit-name-${i}" type="text" value="${c.name}">
           <input id="edit-station-${i}" type="text" value="${c.station}">
           タグ: <input id="edit-tags-${i}" type="text" value="${(c.tags || []).join(",")}">
-          <button onclick="saveEdit(${i})">保存</button>
-          <button onclick="renderContactList()">キャンセル</button>
+          <button class="small" onclick="saveEdit(${i})">保存</button>
+          <button class="secondary small" onclick="renderContactList()">キャンセル</button>
         </div>`;
     }
     return `
       <div class="contact-item">
         <span>👤 ${c.name}（${c.station}駅）${tagsHtml}</span>
-        <button onclick="startEdit(${i})">編集</button>
-        <button onclick="deleteContact(${i})">削除</button>
-        <button onclick="moveContact(${i}, -1)" ${i === 0 ? "disabled" : ""}>↑</button>
-        <button onclick="moveContact(${i}, 1)" ${i === contacts.length - 1 ? "disabled" : ""}>↓</button>
+        <button class="secondary small" onclick="startEdit(${i})">編集</button>
+        <button class="danger small" onclick="deleteContact(${i})">削除</button>
+        <button class="secondary small" onclick="moveContact(${i}, -1)" ${i === 0 ? "disabled" : ""}>↑</button>
+        <button class="secondary small" onclick="moveContact(${i}, 1)" ${i === contacts.length - 1 ? "disabled" : ""}>↓</button>
       </div>`;
   }).join("");
 }
@@ -274,8 +472,7 @@ function onSelectContact(sel) {
   const nameSpan = row.querySelector(".participant-name");
   if (sel.value) {
     stationInput.value = sel.value;
-    const selectedOption = sel.options[sel.selectedIndex];
-    if (nameSpan) nameSpan.textContent = selectedOption.dataset.name || "";
+    if (nameSpan) nameSpan.textContent = sel.options[sel.selectedIndex].dataset.name || "";
   }
 }
 
@@ -283,33 +480,62 @@ function addInput() {
   const div = document.createElement("div");
   div.className = "input-row";
   div.innerHTML = `
-    <select class="contact-select" onchange="onSelectContact(this)">
-      ${buildOptions()}
-    </select>
-    駅名: <input type="text" class="station" placeholder="または直接入力">
+    <select class="contact-select" onchange="onSelectContact(this)">${buildOptions()}</select>
+    <input type="text" class="station" placeholder="または直接入力">
     <span class="participant-name" style="display:none;"></span>
-    <button onclick="this.parentElement.remove()">×</button>
+    <button class="secondary small" onclick="this.parentElement.remove()">×</button>
   `;
   document.getElementById("inputs").appendChild(div);
 }
 
-function showLastTrains(fromStation) {
+function showGenreButtons(lat, lng, stationName) {
+  currentStationName = stationName;
+  currentStationLat = lat;
+  currentStationLng = lng;
+
+  const genres = [
+    { label: "🍺 居酒屋", query: "居酒屋" },
+    { label: "☕ カフェ", query: "カフェ" },
+    { label: "🍴 ファミレス", query: "ファミレス" },
+    { label: "🍜 ランチ", query: "ランチ" },
+    { label: "🍣 寿司", query: "寿司" },
+    { label: "🍖 焼肉", query: "焼肉" },
+    { label: "🍕 イタリアン", query: "イタリアン" },
+    { label: "🍷 ワインバー", query: "ワインバー" },
+  ];
+
+  const section = document.getElementById("genre-section");
+  document.getElementById("genre-title").textContent = `🍽️ ${stationName}駅周辺のお店を探す`;
+  document.getElementById("genre-buttons").innerHTML = genres.map(g => {
+    const url = `https://www.google.com/maps/search/${encodeURIComponent(g.query)}/@${lat},${lng},16z`;
+    return `<a class="genre-btn" href="${url}" target="_blank">${g.label}</a>`;
+  }).join("");
+  section.style.display = "block";
+}
+
+function showLastTrains(stationName) {
   if (currentParticipants.length === 0) return;
   const section = document.getElementById("last-train-section");
-  let html = `<h3>🚃 終電情報（${fromStation}駅 発）</h3>`;
+  let html = `<div class="card"><h2>🚃 終電情報（${stationName}駅 発）</h2>`;
   currentParticipants.forEach(p => {
-    if (p.station === fromStation) return;
-    const gmapUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(fromStation + "駅")}&destination=${encodeURIComponent(p.station + "駅")}&travelmode=transit`;
+    if (p.station === stationName) return;
+    const url = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(stationName + "駅")}&destination=${encodeURIComponent(p.station + "駅")}&travelmode=transit`;
     html += `
       <div class="last-train-card">
         <div class="last-train-info">
           <div class="last-train-name">👤 ${p.name}</div>
           <div class="last-train-route">🏠 ${p.station}駅まで</div>
         </div>
-        <a class="last-train-link" href="${gmapUrl}" target="_blank">終電を調べる →</a>
+        <a class="last-train-link" href="${url}" target="_blank">終電を調べる →</a>
       </div>`;
   });
+  html += `</div>`;
   section.innerHTML = html;
+}
+
+function onStationClick(lat, lng, stationName) {
+  showGenreButtons(lat, lng, stationName);
+  showLastTrains(stationName);
 }
 
 renderContactList();
@@ -332,14 +558,6 @@ async function getNearestStations(lat, lng) {
   const data = await res.json();
   if (!data.response || !data.response.station || data.response.station.length === 0) return [];
   return data.response.station.slice(0, 5);
-}
-
-function showRestaurants(lat, lng, stationName) {
-  const url = `https://www.google.com/maps/search/レストラン/@${lat},${lng},16z`;
-  document.getElementById("restaurants").innerHTML = `
-    <div class="restaurant">
-      <a href="${url}" target="_blank">🍽️ ${stationName}駅周辺のレストランをGoogle Mapsで見る</a>
-    </div>`;
 }
 
 let map = null;
@@ -380,10 +598,7 @@ async function showMap(lat, lng, inputPositions, nearestStations) {
         position: coords, map, title: s.name + "駅",
         icon: "http://maps.google.com/mapfiles/ms/icons/yellow-dot.png"
       });
-      marker.addListener("click", () => {
-        showRestaurants(coords.lat, coords.lng, s.name);
-        showLastTrains(s.name);
-      });
+      marker.addListener("click", () => onStationClick(coords.lat, coords.lng, s.name));
       markers.push(marker);
       bounds.extend(coords);
     }
@@ -402,16 +617,12 @@ async function calc() {
     const nameSpan = row.querySelector(".participant-name");
     const select = row.querySelector(".contact-select");
     if (!stationInput || !stationInput.value) continue;
-
     const stationName = stationInput.value;
     let participantName = nameSpan?.textContent?.trim() || "";
-
-    // プルダウンから名前を取得
     if (!participantName && select && select.selectedIndex > 0) {
       participantName = select.options[select.selectedIndex].dataset.name || stationName;
     }
     if (!participantName) participantName = stationName + "駅";
-
     const coords = await getLatLng(stationName);
     if (coords) {
       sumLat += coords.lat;
@@ -427,11 +638,20 @@ async function calc() {
   const avgLng = sumLng / count;
 
   const nearestStations = await getNearestStations(avgLat, avgLng);
-  document.getElementById("result").innerHTML =
-    `<b>中間地点の最寄り駅（最大5駅）：</b><br>` +
-    nearestStations.map((s, i) => `${i + 1}. <a href="#" onclick="showRestaurants(${s.y},${s.x},'${s.name}'); showLastTrains('${s.name}'); return false;">${s.name}駅（${s.line}）</a>`).join("<br>");
+
+  const resultCard = document.getElementById("result-card");
+  resultCard.style.display = "block";
+  document.getElementById("result").innerHTML = nearestStations.map((s, i) => `
+    <div class="result-station">
+      <a href="#" onclick="onStationClick(0,0,'${s.name}'); return false;">
+        ${i + 1}. ${s.name}駅
+      </a>
+      <div class="line-name">${s.line}</div>
+    </div>
+  `).join("");
 
   document.getElementById("last-train-section").innerHTML = "";
+  document.getElementById("genre-section").style.display = "none";
   await showMap(avgLat, avgLng, inputPositions, nearestStations);
 }
 </script>
