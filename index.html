@@ -14,7 +14,6 @@
       --primary: #4a90e2;
       --primary-dark: #357abd;
       --tag-bg: #e0f0ff;
-      --section-bg: #f0f7ff;
       --shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
     body.dark {
@@ -26,7 +25,6 @@
       --primary: #4a90e2;
       --primary-dark: #357abd;
       --tag-bg: #1a3a5c;
-      --section-bg: #0f2d4a;
       --shadow: 0 2px 8px rgba(0,0,0,0.3);
     }
     * { box-sizing: border-box; }
@@ -41,7 +39,6 @@
     }
     h1 { font-size: 20px; margin-bottom: 16px; }
     h2 { font-size: 16px; margin: 0 0 10px; }
-    h3 { font-size: 15px; margin: 12px 0 8px; }
     .card {
       background: var(--card);
       border-radius: 12px;
@@ -96,15 +93,6 @@
       gap: 8px;
       margin: 6px 0;
       flex-wrap: wrap;
-    }
-    .tag {
-      display: inline-block;
-      background: var(--tag-bg);
-      color: var(--primary);
-      border-radius: 10px;
-      padding: 2px 8px;
-      font-size: 12px;
-      margin: 2px;
     }
     .tag-filter {
       display: inline-block;
@@ -166,10 +154,7 @@
       font-size: 13px;
       color: var(--subtext);
     }
-    .result-station {
-      padding: 10px 0;
-      border-bottom: 1px solid var(--border);
-    }
+    .result-station { padding: 10px 0; border-bottom: 1px solid var(--border); }
     .result-station:last-child { border-bottom: none; }
     .result-station a { color: var(--primary); text-decoration: none; font-weight: bold; font-size: 15px; }
     .result-station .line-name { color: var(--subtext); font-size: 12px; margin-top: 2px; }
@@ -195,15 +180,27 @@
     .td-actions { white-space: nowrap; }
     .td-actions button { margin: 0 2px; }
 
+    /* ドラッグ */
+    .drag-handle {
+      cursor: grab;
+      color: var(--subtext);
+      font-size: 16px;
+      padding: 0 4px;
+      user-select: none;
+      touch-action: none;
+    }
+    .drag-handle:active { cursor: grabbing; }
+    .contact-row { transition: background 0.15s; }
+    .contact-row.dragging { opacity: 0.4; background: var(--tag-bg); }
+    .contact-row.drag-over { border-top: 2px solid var(--primary); }
+
     @media (max-width: 480px) {
       .last-train-card { flex-direction: column; align-items: flex-start; gap: 8px; }
       .last-train-link { width: 100%; text-align: center; }
-      .genre-buttons { gap: 6px; }
-      .genre-btn { padding: 6px 10px; font-size: 12px; }
       .contact-table { font-size: 12px; }
       .td-name { max-width: 70px; }
       .td-station { max-width: 60px; }
-      .td-tags { max-width: 70px; }
+      .td-tags { max-width: 60px; }
     }
   </style>
 </head>
@@ -260,6 +257,7 @@
 
 <script>
 let currentParticipants = [];
+let dragSrcIndex = null;
 
 function toggleDark() {
   document.body.classList.toggle("dark");
@@ -392,6 +390,91 @@ function saveEdit(index) {
   renderContactList(); renderTagFilters(); updateAllDropdowns();
 }
 
+// ドラッグ＆ドロップ（PC）
+function onDragStart(e, index) {
+  dragSrcIndex = index;
+  e.currentTarget.classList.add("dragging");
+  e.dataTransfer.effectAllowed = "move";
+}
+function onDragEnd(e) {
+  e.currentTarget.classList.remove("dragging");
+  document.querySelectorAll(".contact-row").forEach(r => r.classList.remove("drag-over"));
+}
+function onDragOver(e, index) {
+  e.preventDefault();
+  document.querySelectorAll(".contact-row").forEach(r => r.classList.remove("drag-over"));
+  e.currentTarget.classList.add("drag-over");
+}
+function onDrop(e, index) {
+  e.preventDefault();
+  if (dragSrcIndex === null || dragSrcIndex === index) return;
+  const contacts = loadContacts();
+  const item = contacts.splice(dragSrcIndex, 1)[0];
+  contacts.splice(index, 0, item);
+  saveContacts(contacts);
+  dragSrcIndex = null;
+  renderContactList(); updateAllDropdowns();
+}
+
+// タッチ操作（スマホ）
+let touchSrcIndex = null;
+let touchClone = null;
+
+function onTouchStart(e, index) {
+  touchSrcIndex = index;
+  const row = e.currentTarget;
+  const rect = row.getBoundingClientRect();
+  touchClone = row.cloneNode(true);
+  touchClone.style.cssText = `
+    position: fixed;
+    left: ${rect.left}px;
+    top: ${rect.top}px;
+    width: ${rect.width}px;
+    opacity: 0.8;
+    pointer-events: none;
+    z-index: 9999;
+    background: var(--card);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  `;
+  document.body.appendChild(touchClone);
+  row.classList.add("dragging");
+}
+
+function onTouchMove(e) {
+  if (touchClone === null) return;
+  e.preventDefault();
+  const touch = e.touches[0];
+  touchClone.style.top = (touch.clientY - 20) + "px";
+  touchClone.style.left = touchClone.style.left;
+
+  document.querySelectorAll(".contact-row").forEach(r => r.classList.remove("drag-over"));
+  const el = document.elementFromPoint(touch.clientX, touch.clientY);
+  const row = el?.closest(".contact-row");
+  if (row) row.classList.add("drag-over");
+}
+
+function onTouchEnd(e) {
+  if (touchClone) { touchClone.remove(); touchClone = null; }
+  document.querySelectorAll(".contact-row").forEach(r => {
+    r.classList.remove("dragging");
+    r.classList.remove("drag-over");
+  });
+  const touch = e.changedTouches[0];
+  const el = document.elementFromPoint(touch.clientX, touch.clientY);
+  const row = el?.closest(".contact-row");
+  if (row && touchSrcIndex !== null) {
+    const destIndex = parseInt(row.dataset.index);
+    if (!isNaN(destIndex) && destIndex !== touchSrcIndex) {
+      const contacts = loadContacts();
+      const item = contacts.splice(touchSrcIndex, 1)[0];
+      contacts.splice(destIndex, 0, item);
+      saveContacts(contacts);
+      renderContactList(); updateAllDropdowns();
+    }
+  }
+  touchSrcIndex = null;
+}
+
 function renderContactList(editIndex = -1) {
   const contacts = loadContacts();
   const div = document.getElementById("contact-list");
@@ -404,23 +487,25 @@ function renderContactList(editIndex = -1) {
     <table class="contact-table">
       <thead>
         <tr>
+          <th></th>
           <th>名前</th>
           <th>駅名</th>
           <th>タグ</th>
           <th>操作</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody id="contact-tbody">
   `;
 
   contacts.forEach((c, i) => {
     const tagsText = (c.tags || []).join(", ");
     if (i === editIndex) {
       html += `
-        <tr>
-          <td><input id="edit-name-${i}" type="text" value="${c.name}" style="width:80px;"></td>
-          <td><input id="edit-station-${i}" type="text" value="${c.station}" style="width:70px;"></td>
-          <td><input id="edit-tags-${i}" type="text" value="${(c.tags || []).join(",")}" style="width:90px;"></td>
+        <tr class="contact-row" data-index="${i}">
+          <td></td>
+          <td><input id="edit-name-${i}" type="text" value="${c.name}" style="width:75px;"></td>
+          <td><input id="edit-station-${i}" type="text" value="${c.station}" style="width:65px;"></td>
+          <td><input id="edit-tags-${i}" type="text" value="${(c.tags || []).join(",")}" style="width:80px;"></td>
           <td class="td-actions">
             <button class="small" onclick="saveEdit(${i})">保存</button>
             <button class="secondary small" onclick="renderContactList()">取消</button>
@@ -428,7 +513,20 @@ function renderContactList(editIndex = -1) {
         </tr>`;
     } else {
       html += `
-        <tr>
+        <tr class="contact-row" data-index="${i}"
+          draggable="true"
+          ondragstart="onDragStart(event,${i})"
+          ondragend="onDragEnd(event)"
+          ondragover="onDragOver(event,${i})"
+          ondrop="onDrop(event,${i})">
+          <td>
+            <span class="drag-handle"
+              ontouchstart="onTouchStart(event,${i})"
+              ontouchmove="onTouchMove(event)"
+              ontouchend="onTouchEnd(event)">
+              ⠿
+            </span>
+          </td>
           <td class="td-name" title="${c.name}">👤 ${c.name}</td>
           <td class="td-station" title="${c.station}駅">${c.station}駅</td>
           <td class="td-tags" title="${tagsText}">${tagsText || "—"}</td>
@@ -630,8 +728,7 @@ async function calc() {
   const avgLng = sumLng / count;
   const nearestStations = await getNearestStations(avgLat, avgLng);
 
-  const resultCard = document.getElementById("result-card");
-  resultCard.style.display = "block";
+  document.getElementById("result-card").style.display = "block";
   document.getElementById("result").innerHTML = nearestStations.map((s, i) => `
     <div class="result-station">
       <a href="#" onclick="onStationClick(0,0,'${s.name}'); return false;">
