@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='50' cy='50' r='50' fill='%234CAF82'/%3E%3Ccircle cx='20' cy='62' r='18' fill='%237DD4A8'/%3E%3Ccircle cx='80' cy='62' r='18' fill='%237DD4A8'/%3E%3Ccircle cx='50' cy='50' r='50' fill='%234CAF82'/%3E%3Ccircle cx='32' cy='44' r='7' fill='%23fff'/%3E%3Ccircle cx='50' cy='48' r='7' fill='%23fff'/%3E%3Ccircle cx='68' cy='44' r='7' fill='%23fff'/%3E%3Cpath d='M32 44 C38 32 44 32 50 48 C56 32 62 32 68 44' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='20' cy='62' r='5' fill='%23fff'/%3E%3Ccircle cx='80' cy='62' r='5' fill='%23fff'/%3E%3Cpath d='M20 62 C32 68 40 60 50 48' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round'/%3E%3Cpath d='M80 62 C68 68 60 60 50 48' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
   <title>ミドる</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='50' cy='50' r='50' fill='%234CAF82'/%3E%3Ccircle cx='20' cy='62' r='18' fill='%237DD4A8'/%3E%3Ccircle cx='80' cy='62' r='18' fill='%237DD4A8'/%3E%3Ccircle cx='50' cy='50' r='50' fill='%234CAF82'/%3E%3Ccircle cx='32' cy='44' r='7' fill='%23fff'/%3E%3Ccircle cx='50' cy='48' r='7' fill='%23fff'/%3E%3Ccircle cx='68' cy='44' r='7' fill='%23fff'/%3E%3Cpath d='M32 44 C38 32 44 32 50 48 C56 32 62 32 68 44' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='20' cy='62' r='5' fill='%23fff'/%3E%3Ccircle cx='80' cy='62' r='5' fill='%23fff'/%3E%3Cpath d='M20 62 C32 68 40 60 50 48' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round'/%3E%3Cpath d='M80 62 C68 68 60 60 50 48' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
   <style>
     :root {
       --bg: #f5f5f5;
@@ -159,8 +159,20 @@
     .result-station:last-child { border-bottom: none; }
     .result-station a { color: var(--primary); text-decoration: none; font-weight: bold; font-size: 15px; }
     .result-station .line-name { color: var(--subtext); font-size: 12px; margin-top: 2px; }
-
-    /* 連絡先テーブル */
+    .warning-box {
+      background: #fff3cd;
+      border: 1px solid #ffc107;
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-top: 10px;
+      font-size: 13px;
+      color: #856404;
+    }
+    body.dark .warning-box {
+      background: #3d2e00;
+      border-color: #ffc107;
+      color: #ffc107;
+    }
     .contact-table { width: 100%; border-collapse: collapse; font-size: 13px; }
     .contact-table th {
       text-align: left;
@@ -180,8 +192,6 @@
     .td-tags { max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .td-actions { white-space: nowrap; }
     .td-actions button { margin: 0 2px; }
-
-    /* ドラッグ */
     .drag-handle {
       cursor: grab;
       color: var(--subtext);
@@ -194,7 +204,6 @@
     .contact-row { transition: background 0.15s; }
     .contact-row.dragging { opacity: 0.4; background: var(--tag-bg); }
     .contact-row.drag-over { border-top: 2px solid var(--primary); }
-
     @media (max-width: 480px) {
       .last-train-card { flex-direction: column; align-items: flex-start; gap: 8px; }
       .last-train-link { width: 100%; text-align: center; }
@@ -227,8 +236,32 @@
   <button class="dark-toggle" onclick="toggleDark()">🌙 ダーク</button>
 </div>
 
+<!-- ①タグで絞り込んで計算 -->
+<div class="card" style="border: 1px solid var(--primary);">
+  <h2>🏷️ タグで絞り込んで計算</h2>
+  <div id="tag-filters" style="margin-bottom:10px;"></div>
+  <button onclick="calcByTag()">このタグの人で中間地点を計算</button>
+</div>
+
+<!-- ②登録した連絡先 -->
 <div class="card">
-  <h2>👥 連絡先管理</h2>
+  <h2>👥 登録した連絡先</h2>
+  <div id="contact-list"></div>
+</div>
+
+<!-- ③入力欄 -->
+<div class="card">
+  <h2>🚉 出発駅を入力</h2>
+  <div id="inputs"></div>
+  <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+    <button class="secondary" onclick="addInput()">＋ 人を追加</button>
+    <button onclick="calc()">中間地点を計算</button>
+  </div>
+</div>
+
+<!-- ④CSV・連絡先追加 -->
+<div class="card">
+  <h2>➕ 連絡先を追加</h2>
   <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px;">
     <input type="text" id="contact-name" placeholder="名前">
     <input type="text" id="contact-station" placeholder="最寄り駅">
@@ -240,27 +273,12 @@
     <input type="file" id="csv-file" accept=".csv">
     <button onclick="importCSV()">取り込む</button>
   </div>
-  <div id="contact-list" style="margin-top:10px;"></div>
-</div>
-
-<div class="card" style="border: 1px solid var(--primary);">
-  <h2>🏷️ タグで絞り込んで計算</h2>
-  <div id="tag-filters" style="margin-bottom:10px;"></div>
-  <button onclick="calcByTag()">このタグの人で中間地点を計算</button>
-</div>
-
-<div class="card">
-  <h2>🚉 出発駅を入力</h2>
-  <div id="inputs"></div>
-  <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
-    <button class="secondary" onclick="addInput()">＋ 人を追加</button>
-    <button onclick="calc()">中間地点を計算</button>
-  </div>
 </div>
 
 <div id="result-card" style="display:none;" class="card">
   <h2>📌 中間地点の最寄り駅（最大5駅）</h2>
   <div id="result"></div>
+  <div id="warning"></div>
 </div>
 
 <div id="map"></div>
@@ -274,6 +292,8 @@
 <script>
 let currentParticipants = [];
 let dragSrcIndex = null;
+let touchSrcIndex = null;
+let touchClone = null;
 
 function toggleDark() {
   document.body.classList.toggle("dark");
@@ -338,6 +358,7 @@ function renderTagFilters() {
 function selectTag(tag) {
   activeTag = activeTag === tag ? null : tag;
   renderTagFilters();
+  renderContactList();
 }
 
 async function calcByTag() {
@@ -392,7 +413,7 @@ function moveContact(index, direction) {
   renderContactList(); updateAllDropdowns();
 }
 
-function startEdit(index) { renderContactList(index); }
+function startEdit(index) { renderContactList(-1, index); }
 
 function saveEdit(index) {
   const name = document.getElementById(`edit-name-${index}`).value.trim();
@@ -406,7 +427,7 @@ function saveEdit(index) {
   renderContactList(); renderTagFilters(); updateAllDropdowns();
 }
 
-// ドラッグ＆ドロップ（PC）
+// ドラッグ（PC）
 function onDragStart(e, index) {
   dragSrcIndex = index;
   e.currentTarget.classList.add("dragging");
@@ -432,49 +453,29 @@ function onDrop(e, index) {
   renderContactList(); updateAllDropdowns();
 }
 
-// タッチ操作（スマホ）
-let touchSrcIndex = null;
-let touchClone = null;
-
+// タッチ（スマホ）
 function onTouchStart(e, index) {
   touchSrcIndex = index;
   const row = e.currentTarget;
   const rect = row.getBoundingClientRect();
   touchClone = row.cloneNode(true);
-  touchClone.style.cssText = `
-    position: fixed;
-    left: ${rect.left}px;
-    top: ${rect.top}px;
-    width: ${rect.width}px;
-    opacity: 0.8;
-    pointer-events: none;
-    z-index: 9999;
-    background: var(--card);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-  `;
+  touchClone.style.cssText = `position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;opacity:0.8;pointer-events:none;z-index:9999;background:var(--card);box-shadow:0 4px 12px rgba(0,0,0,0.2);`;
   document.body.appendChild(touchClone);
   row.classList.add("dragging");
 }
-
 function onTouchMove(e) {
-  if (touchClone === null) return;
+  if (!touchClone) return;
   e.preventDefault();
   const touch = e.touches[0];
   touchClone.style.top = (touch.clientY - 20) + "px";
-  touchClone.style.left = touchClone.style.left;
-
   document.querySelectorAll(".contact-row").forEach(r => r.classList.remove("drag-over"));
   const el = document.elementFromPoint(touch.clientX, touch.clientY);
   const row = el?.closest(".contact-row");
   if (row) row.classList.add("drag-over");
 }
-
 function onTouchEnd(e) {
   if (touchClone) { touchClone.remove(); touchClone = null; }
-  document.querySelectorAll(".contact-row").forEach(r => {
-    r.classList.remove("dragging");
-    r.classList.remove("drag-over");
-  });
+  document.querySelectorAll(".contact-row").forEach(r => { r.classList.remove("dragging"); r.classList.remove("drag-over"); });
   const touch = e.changedTouches[0];
   const el = document.elementFromPoint(touch.clientX, touch.clientY);
   const row = el?.closest(".contact-row");
@@ -492,10 +493,15 @@ function onTouchEnd(e) {
 }
 
 function renderContactList(editIndex = -1) {
-  const contacts = loadContacts();
+  const allContacts = loadContacts();
+  // タグ絞り込み
+  const contacts = activeTag
+    ? allContacts.filter(c => (c.tags || []).includes(activeTag))
+    : allContacts;
+
   const div = document.getElementById("contact-list");
   if (contacts.length === 0) {
-    div.innerHTML = "<p style='color:var(--subtext);font-size:13px;'>登録された連絡先はありません</p>";
+    div.innerHTML = "<p style='color:var(--subtext);font-size:13px;'>該当する連絡先はありません</p>";
     return;
   }
 
@@ -510,47 +516,47 @@ function renderContactList(editIndex = -1) {
           <th>操作</th>
         </tr>
       </thead>
-      <tbody id="contact-tbody">
+      <tbody>
   `;
 
   contacts.forEach((c, i) => {
+    // allContactsでの実インデックスを取得
+    const realIndex = allContacts.indexOf(c);
     const tagsText = (c.tags || []).join(", ");
-    if (i === editIndex) {
+    if (realIndex === editIndex) {
       html += `
-        <tr class="contact-row" data-index="${i}">
+        <tr class="contact-row" data-index="${realIndex}">
           <td></td>
-          <td><input id="edit-name-${i}" type="text" value="${c.name}" style="width:75px;"></td>
-          <td><input id="edit-station-${i}" type="text" value="${c.station}" style="width:65px;"></td>
-          <td><input id="edit-tags-${i}" type="text" value="${(c.tags || []).join(",")}" style="width:80px;"></td>
+          <td><input id="edit-name-${realIndex}" type="text" value="${c.name}" style="width:75px;"></td>
+          <td><input id="edit-station-${realIndex}" type="text" value="${c.station}" style="width:65px;"></td>
+          <td><input id="edit-tags-${realIndex}" type="text" value="${(c.tags || []).join(",")}" style="width:80px;"></td>
           <td class="td-actions">
-            <button class="small" onclick="saveEdit(${i})">保存</button>
+            <button class="small" onclick="saveEdit(${realIndex})">保存</button>
             <button class="secondary small" onclick="renderContactList()">取消</button>
           </td>
         </tr>`;
     } else {
       html += `
-        <tr class="contact-row" data-index="${i}"
+        <tr class="contact-row" data-index="${realIndex}"
           draggable="true"
-          ondragstart="onDragStart(event,${i})"
+          ondragstart="onDragStart(event,${realIndex})"
           ondragend="onDragEnd(event)"
-          ondragover="onDragOver(event,${i})"
-          ondrop="onDrop(event,${i})">
+          ondragover="onDragOver(event,${realIndex})"
+          ondrop="onDrop(event,${realIndex})">
           <td>
             <span class="drag-handle"
-              ontouchstart="onTouchStart(event,${i})"
+              ontouchstart="onTouchStart(event,${realIndex})"
               ontouchmove="onTouchMove(event)"
-              ontouchend="onTouchEnd(event)">
-              ⠿
-            </span>
+              ontouchend="onTouchEnd(event)">⠿</span>
           </td>
           <td class="td-name" title="${c.name}">👤 ${c.name}</td>
           <td class="td-station" title="${c.station}駅">${c.station}駅</td>
           <td class="td-tags" title="${tagsText}">${tagsText || "—"}</td>
           <td class="td-actions">
-            <button class="secondary small" onclick="startEdit(${i})">編集</button>
-            <button class="danger small" onclick="deleteContact(${i})">削除</button>
-            <button class="secondary small" onclick="moveContact(${i}, -1)" ${i === 0 ? "disabled" : ""}>↑</button>
-            <button class="secondary small" onclick="moveContact(${i}, 1)" ${i === contacts.length - 1 ? "disabled" : ""}>↓</button>
+            <button class="secondary small" onclick="startEdit(${realIndex})">編集</button>
+            <button class="danger small" onclick="deleteContact(${realIndex})">削除</button>
+            <button class="secondary small" onclick="moveContact(${realIndex}, -1)" ${realIndex === 0 ? "disabled" : ""}>↑</button>
+            <button class="secondary small" onclick="moveContact(${realIndex}, 1)" ${realIndex === allContacts.length - 1 ? "disabled" : ""}>↓</button>
           </td>
         </tr>`;
     }
@@ -597,6 +603,34 @@ function addInput() {
     <button class="secondary small" onclick="this.parentElement.remove()">×</button>
   `;
   document.getElementById("inputs").appendChild(div);
+}
+
+// 距離計算（km）
+function calcDistance(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat/2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng/2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function checkDistanceWarning(positions) {
+  let maxDist = 0;
+  for (let i = 0; i < positions.length; i++) {
+    for (let j = i + 1; j < positions.length; j++) {
+      const d = calcDistance(positions[i].lat, positions[i].lng, positions[j].lat, positions[j].lng);
+      if (d > maxDist) maxDist = d;
+    }
+  }
+  const warningDiv = document.getElementById("warning");
+  if (maxDist > 100) {
+    warningDiv.innerHTML = `<div class="warning-box">⚠️ 参加者間の最大距離が約${Math.round(maxDist)}kmあります。集まるのが難しい距離かもしれません。</div>`;
+  } else if (maxDist > 50) {
+    warningDiv.innerHTML = `<div class="warning-box">⚠️ 参加者間の最大距離が約${Math.round(maxDist)}kmあります。少し遠めです。</div>`;
+  } else {
+    warningDiv.innerHTML = "";
+  }
 }
 
 function showGenreButtons(lat, lng, stationName) {
@@ -674,36 +708,22 @@ async function showMap(lat, lng, inputPositions, nearestStations) {
   mapDiv.style.display = "block";
   markers.forEach(m => m.setMap(null));
   markers = [];
-
   if (!map) {
     map = new google.maps.Map(mapDiv, { center: { lat, lng }, zoom: 13 });
   } else {
     map.setCenter({ lat, lng });
   }
-
   const bounds = new google.maps.LatLngBounds();
-
   inputPositions.forEach(pos => {
-    markers.push(new google.maps.Marker({
-      position: pos, map,
-      icon: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png"
-    }));
+    markers.push(new google.maps.Marker({ position: pos, map, icon: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png" }));
     bounds.extend(pos);
   });
-
-  markers.push(new google.maps.Marker({
-    position: { lat, lng }, map, title: "中間地点",
-    icon: "http://maps.google.com/mapfiles/ms/icons/red-dot.png"
-  }));
+  markers.push(new google.maps.Marker({ position: { lat, lng }, map, title: "中間地点", icon: "http://maps.google.com/mapfiles/ms/icons/red-dot.png" }));
   bounds.extend({ lat, lng });
-
   for (const s of nearestStations) {
     const coords = await getLatLng(s.name);
     if (coords) {
-      const marker = new google.maps.Marker({
-        position: coords, map, title: s.name + "駅",
-        icon: "http://maps.google.com/mapfiles/ms/icons/yellow-dot.png"
-      });
+      const marker = new google.maps.Marker({ position: coords, map, title: s.name + "駅", icon: "http://maps.google.com/mapfiles/ms/icons/yellow-dot.png" });
       marker.addListener("click", () => onStationClick(coords.lat, coords.lng, s.name));
       markers.push(marker);
       bounds.extend(coords);
@@ -747,12 +767,12 @@ async function calc() {
   document.getElementById("result-card").style.display = "block";
   document.getElementById("result").innerHTML = nearestStations.map((s, i) => `
     <div class="result-station">
-      <a href="#" onclick="onStationClick(0,0,'${s.name}'); return false;">
-        ${i + 1}. ${s.name}駅
-      </a>
+      <a href="#" onclick="onStationClick(0,0,'${s.name}'); return false;">${i + 1}. ${s.name}駅</a>
       <div class="line-name">${s.line}</div>
     </div>
   `).join("");
+
+  checkDistanceWarning(inputPositions);
 
   document.getElementById("last-train-section").innerHTML = "";
   document.getElementById("genre-section").style.display = "none";
