@@ -236,20 +236,17 @@
   <button class="dark-toggle" onclick="toggleDark()">🌙 ダーク</button>
 </div>
 
-<!-- ①タグで絞り込んで計算 -->
 <div class="card" style="border: 1px solid var(--primary);">
   <h2>🏷️ タグで絞り込んで計算</h2>
   <div id="tag-filters" style="margin-bottom:10px;"></div>
   <button onclick="calcByTag()">このタグの人で中間地点を計算</button>
 </div>
 
-<!-- ②登録した連絡先 -->
 <div class="card">
   <h2>👥 登録した連絡先</h2>
   <div id="contact-list"></div>
 </div>
 
-<!-- ③入力欄 -->
 <div class="card">
   <h2>🚉 出発駅を入力</h2>
   <div id="inputs"></div>
@@ -259,7 +256,6 @@
   </div>
 </div>
 
-<!-- ④CSV・連絡先追加 -->
 <div class="card">
   <h2>➕ 連絡先を追加</h2>
   <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px;">
@@ -427,7 +423,6 @@ function saveEdit(index) {
   renderContactList(); renderTagFilters(); updateAllDropdowns();
 }
 
-// ドラッグ（PC）
 function onDragStart(e, index) {
   dragSrcIndex = index;
   e.currentTarget.classList.add("dragging");
@@ -453,7 +448,6 @@ function onDrop(e, index) {
   renderContactList(); updateAllDropdowns();
 }
 
-// タッチ（スマホ）
 function onTouchStart(e, index) {
   touchSrcIndex = index;
   const row = e.currentTarget;
@@ -494,7 +488,6 @@ function onTouchEnd(e) {
 
 function renderContactList(editIndex = -1) {
   const allContacts = loadContacts();
-  // タグ絞り込み
   const contacts = activeTag
     ? allContacts.filter(c => (c.tags || []).includes(activeTag))
     : allContacts;
@@ -519,8 +512,7 @@ function renderContactList(editIndex = -1) {
       <tbody>
   `;
 
-  contacts.forEach((c, i) => {
-    // allContactsでの実インデックスを取得
+  contacts.forEach((c) => {
     const realIndex = allContacts.indexOf(c);
     const tagsText = (c.tags || []).join(", ");
     if (realIndex === editIndex) {
@@ -605,7 +597,6 @@ function addInput() {
   document.getElementById("inputs").appendChild(div);
 }
 
-// 距離計算（km）
 function calcDistance(lat1, lng1, lat2, lng2) {
   const R = 6371;
   const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -634,7 +625,7 @@ function checkDistanceWarning(positions) {
 }
 
 function showGenreButtons(lat, lng, stationName) {
-const genres = [
+  const genres = [
     { label: "🍺 居酒屋", query: "居酒屋" },
     { label: "☕ カフェ", query: "カフェ" },
     { label: "🍴 ファミレス", query: "ファミレス" },
@@ -645,7 +636,7 @@ const genres = [
     { label: "🍷 ワインバー", query: "ワインバー" },
     { label: "🧖 サウナ", query: "サウナ" },
     { label: "♨️ 銭湯", query: "銭湯" },
-];
+  ];
   const section = document.getElementById("genre-section");
   document.getElementById("genre-title").textContent = `🍽️ ${stationName}駅周辺のお店を探す`;
   document.getElementById("genre-buttons").innerHTML = genres.map(g => {
@@ -769,13 +760,12 @@ async function calc() {
   document.getElementById("result-card").style.display = "block";
   document.getElementById("result").innerHTML = nearestStations.map((s, i) => `
     <div class="result-station">
-      <a href="#" onclick="onStationClick(0,0,'${s.name}'); return false;">${i + 1}. ${s.name}駅</a>
+      <a href="#" onclick="onStationClick(${s.y},${s.x},'${s.name}'); return false;">${i + 1}. ${s.name}駅</a>
       <div class="line-name">${s.line}</div>
     </div>
   `).join("");
 
   checkDistanceWarning(inputPositions);
-
   document.getElementById("last-train-section").innerHTML = "";
   document.getElementById("genre-section").style.display = "none";
   await showMap(avgLat, avgLng, inputPositions, nearestStations);
