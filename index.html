@@ -634,7 +634,7 @@ function checkDistanceWarning(positions) {
 }
 
 function showGenreButtons(lat, lng, stationName) {
-  const genres = [
+const genres = [
     { label: "🍺 居酒屋", query: "居酒屋" },
     { label: "☕ カフェ", query: "カフェ" },
     { label: "🍴 ファミレス", query: "ファミレス" },
@@ -643,7 +643,9 @@ function showGenreButtons(lat, lng, stationName) {
     { label: "🍖 焼肉", query: "焼肉" },
     { label: "🍕 イタリアン", query: "イタリアン" },
     { label: "🍷 ワインバー", query: "ワインバー" },
-  ];
+    { label: "🧖 サウナ", query: "サウナ" },
+    { label: "♨️ 銭湯", query: "銭湯" },
+];
   const section = document.getElementById("genre-section");
   document.getElementById("genre-title").textContent = `🍽️ ${stationName}駅周辺のお店を探す`;
   document.getElementById("genre-buttons").innerHTML = genres.map(g => {
