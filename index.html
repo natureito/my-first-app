@@ -640,7 +640,7 @@ function showGenreButtons(lat, lng, stationName) {
   const section = document.getElementById("genre-section");
   document.getElementById("genre-title").textContent = `🍽️ ${stationName}駅周辺のお店を探す`;
   document.getElementById("genre-buttons").innerHTML = genres.map(g => {
-    const url = `https://www.google.com/maps/search/${encodeURIComponent(g.query)}/@${lat},${lng},16z`;
+    const url = `https://www.google.com/maps/search/${encodeURIComponent(g.query + " " + stationName + "駅")}/@${lat},${lng},15z`;
     return `<a class="genre-btn" href="${url}" target="_blank">${g.label}</a>`;
   }).join("");
   section.style.display = "block";
